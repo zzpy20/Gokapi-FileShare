@@ -95,7 +95,7 @@ LIST_TEMPLATE = """<!DOCTYPE html>
 <div class="wrap">
   <div class="topbar">
     <h1>📁 文件分享</h1>
-    <a class="upload-link" href="/upload?folder={folder_q}">📤 上传 / 新建文件夹</a>
+    <a class="upload-link" href="/upload?folder={folder_q}">🛠 管理文件（上传 / 改名 / 删除）</a>
   </div>
   <table>
     <thead><tr><th>文件名</th><th>大小</th><th>修改时间</th></tr></thead>
@@ -151,6 +151,32 @@ UPLOAD_TEMPLATE = """<!DOCTYPE html>
     </form>
   </div>
 </div>
+<script>
+function copyLink(url, btn) {{
+  var original = btn.textContent;
+  function done(ok) {{
+    btn.textContent = ok ? '✅ 已复制' : '复制失败';
+    setTimeout(function () {{ btn.textContent = original; }}, 1500);
+  }}
+  function fallback() {{
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try {{ ok = document.execCommand('copy'); }} catch (e) {{ ok = false; }}
+    document.body.removeChild(ta);
+    done(ok);
+  }}
+  if (navigator.clipboard && window.isSecureContext) {{
+    navigator.clipboard.writeText(url).then(function () {{ done(true); }}).catch(fallback);
+  }} else {{
+    fallback();
+  }}
+}}
+</script>
 </body>
 </html>"""
 
@@ -349,6 +375,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             return '    <tr><td colspan="2" class="empty">此文件夹为空</td></tr>'
         names.sort(key=lambda n: os.path.getmtime(os.path.join(folder_abs, n)), reverse=True)
         folder_attr = html.escape(folder_rel)
+        host = self.headers.get("Host", f"localhost:{PORT}")
         rows = []
         for name in names:
             full = os.path.join(folder_abs, name)
@@ -357,6 +384,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             icon = "📁" if is_dir else ICONS.get(ext, "📄")
             name_esc = html.escape(name)
             sub_rel = (folder_rel + "/" + name) if folder_rel else name
+            link_url = f"http://{host}/{urllib.parse.quote(sub_rel)}" + ("/" if is_dir else "")
             if is_dir:
                 name_cell = f'<a href="/upload?folder={urllib.parse.quote(sub_rel)}">{icon} {name_esc}</a>'
             else:
@@ -364,6 +392,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             rows.append(f"""    <tr class="manage-row">
       <td class="name">{name_cell}</td>
       <td class="actions">
+        <button type="button" class="btn-mini" onclick="copyLink('{link_url}', this)">🔗 复制链接</button>
         <form method="post" action="/rename">
           <input type="hidden" name="folder" value="{folder_attr}">
           <input type="hidden" name="old_name" value="{name_esc}">
