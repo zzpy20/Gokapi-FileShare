@@ -238,7 +238,7 @@
 
   <span class="eyebrow">Shenzhen file-share stack · Part 2 of 3</span>
   <h1>Where Your Files Live</h1>
-  <p class="lede">Three apps, three different answers. This is the host path behind each link, how to add or remove something by hand, and what happens to it over time.</p>
+  <p class="lede">Two apps, two different answers. This is the host path behind each link, how to add or remove something by hand, and what happens to it over time.</p>
 
   <div class="app-card">
     <div class="app-head">
@@ -251,9 +251,12 @@
       <dd><code>~/fileshare/shared/</code> — real filenames, real subfolders, exactly as they sit on disk.</dd>
 
       <dt>Add a file</dt>
-      <dd><pre>scp yourfile.pdf sz:~/fileshare/shared/</pre>or drag-and-drop at the password-gated <code>/upload</code> page.</dd>
+      <dd><pre>scp yourfile.pdf sz:~/fileshare/shared/</pre>or drag-and-drop at the password-gated management page (the "🛠 管理文件" link on every listing).</dd>
 
-      <dt>Remove a file</dt>
+      <dt>Rename / delete / copy link</dt>
+      <dd>All three are on that same management page now — no SSH needed for day-to-day use. Each row also has a one-click share-link copy button, for files and folders alike.</dd>
+
+      <dt>Remove a file (SSH)</dt>
       <dd><pre>ssh sz 'rm ~/fileshare/shared/"yourfile.pdf"'</pre></dd>
 
       <dt>List everything</dt>
@@ -269,37 +272,10 @@
 
   <div class="app-card">
     <div class="app-head">
-      <h2>quickshare-sz</h2>
-      <span class="port-tag">:9000</span>
-    </div>
-    <p class="app-sub">One-off private links — no listing, the link is the only way in.</p>
-    <dl class="fact-grid">
-      <dt>Host path</dt>
-      <dd><code>~/quickshare-sz/data/&lt;id&gt;/&lt;filename&gt;</code> — every upload gets its own folder, and that random 12-character folder name <em>is</em> the id in the link.</dd>
-
-      <dt>Add a file</dt>
-      <dd>Only through the web upload page at <code>:9000</code>, pasting the upload key. The id has to come from the app itself, so there's no SSH shortcut for this one.</dd>
-
-      <dt>Remove a share</dt>
-      <dd><pre>ssh sz 'rm -rf ~/quickshare-sz/data/&lt;id&gt;/'</pre></dd>
-
-      <dt>List all shares</dt>
-      <dd><pre>ssh sz 'ls ~/quickshare-sz/data/'</pre>then look inside each folder for the filename.</dd>
-
-      <dt>Retention</dt>
-      <dd>Forever, no expiry — same as fileshare, just link-shaped instead of browsable.</dd>
-
-      <dt>Currently</dt>
-      <dd class="stat muted">5.7 MB across 9 shares</dd>
-    </dl>
-  </div>
-
-  <div class="app-card">
-    <div class="app-head">
       <h2>gokapi</h2>
       <span class="port-tag">:9001</span>
     </div>
-    <p class="app-sub">Expiring links with a real admin UI — the only one of the three you don't manage by hand.</p>
+    <p class="app-sub">Expiring links with a real admin UI — the other of the two apps, and the more feature-rich one.</p>
     <dl class="fact-grid">
       <dt>Host path</dt>
       <dd><code>~/gokapi/data/</code> — but files are encrypted at rest, so what's actually there is opaque hash-named blobs, not readable names or content.</dd>
@@ -314,7 +290,7 @@
       <dd><code>~/gokapi/data/gokapi.sqlite</code> — don't hand-edit this; use the admin UI.</dd>
 
       <dt>Retention</dt>
-      <dd>Whatever expiry you set per file at upload — this is the only one of the three with real expiry.</dd>
+      <dd>Whatever expiry you set per file at upload — this is the only one of the two with real expiry.</dd>
 
       <dt>Currently</dt>
       <dd class="stat muted">3.7 MB across 3 uploads</dd>
@@ -325,7 +301,7 @@
     <span class="tag">To wipe an app completely</span>
     <p>Irreversible — stop the container first, then clear its data directory and restart. Layouts differ, so do it per app:</p>
     <pre>ssh sz 'cd ~/gokapi && docker compose down && rm -rf data/* config/* && docker compose up -d'</pre>
-    <p style="margin-top:8px;">Gokapi will ask you to run through <code>/setup</code> again afterward. fileshare and quickshare-sz just need their <code>shared/</code> or <code>data/</code> folder emptied the same way — no setup step to redo.</p>
+    <p style="margin-top:8px;">Gokapi will ask you to run through <code>/setup</code> again afterward. fileshare just needs its <code>shared/</code> folder emptied the same way — no setup step to redo.</p>
   </div>
 
   <footer>

@@ -301,35 +301,32 @@
 
   <span class="eyebrow">Shenzhen file-share stack · Part 3 of 3</span>
   <h1>New Box, Same Stack</h1>
-  <p class="lede">All three apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Replicating one is copying four things and running one command.</p>
+  <p class="lede">Both apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Replicating one is copying four things and running one command.</p>
   <p class="lede-note">Prerequisite on the new box — Ubuntu with Docker installed:</p>
   <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
 sudo systemctl enable --now docker</pre>
 
   <section>
-    <h2>fileshare &amp; quickshare-sz</h2>
-    <p class="twin-tag">identical pattern — both are the same custom Python script shape</p>
+    <h2>fileshare <span class="port-tag">:8080</span></h2>
     <div class="app-card">
       <div class="mini-steps">
         <div class="mini-step">
           <div class="label">1 · Copy the folder over</div>
-          <pre>rsync -a ~/fileshare/ newbox:~/fileshare/
-rsync -a ~/quickshare-sz/ newbox:~/quickshare-sz/</pre>
-          <p>Brings the Dockerfile, docker-compose.yml, source, and — since nothing's excluded — the existing files too. Add <code>--exclude shared</code> / <code>--exclude data</code> if you want the new box to start empty.</p>
+          <pre>rsync -a ~/fileshare/ newbox:~/fileshare/</pre>
+          <p>Brings the Dockerfile, docker-compose.yml, source, and — since nothing's excluded — the existing files too. Add <code>--exclude shared</code> if you want the new box to start empty.</p>
         </div>
         <div class="mini-step">
           <div class="label">2 · Build and start</div>
-          <pre>ssh newbox 'cd ~/fileshare && docker compose up -d --build'
-ssh newbox 'cd ~/quickshare-sz && docker compose up -d --build'</pre>
-          <p>Both build from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</p>
+          <pre>ssh newbox 'cd ~/fileshare && docker compose up -d --build'</pre>
+          <p>Builds from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</p>
         </div>
         <div class="mini-step">
           <div class="label">3 · Rotate credentials, if this is a genuinely separate box</div>
-          <p>Edit <code>UPLOAD_USER</code> / <code>UPLOAD_PASS</code> in fileshare's <code>docker-compose.yml</code>, and <code>UPLOAD_TOKEN</code> in quickshare-sz's, before starting — unless you're intentionally standing up a duplicate of the same instance.</p>
+          <p>Edit <code>UPLOAD_USER</code> / <code>UPLOAD_PASS</code> in <code>docker-compose.yml</code> before starting — unless you're intentionally standing up a duplicate of the same instance.</p>
         </div>
         <div class="mini-step">
-          <div class="label">4 · Open the ports</div>
-          <p>8080 and 9000, in whatever firewall or security-group system the new box's host uses.</p>
+          <div class="label">4 · Open the port</div>
+          <p>8080, in whatever firewall or security-group system the new box's host uses.</p>
         </div>
       </div>
     </div>
@@ -391,7 +388,7 @@ docker compose up -d --build'</pre>
     <div class="toggle-row">
       <div class="path-card a">
         <span class="path-tag">Fresh start</span>
-        <p>Don't copy <code>data/</code> or <code>config/</code> — every app happily initializes empty. Gokapi will ask you to run <code>/setup</code> again; fileshare and quickshare-sz need no setup step at all.</p>
+        <p>Don't copy <code>data/</code> or <code>config/</code> — both apps happily initialize empty. Gokapi will ask you to run <code>/setup</code> again; fileshare needs no setup step at all.</p>
       </div>
       <div class="path-card b">
         <span class="path-tag">Same files, same links</span>
@@ -406,7 +403,7 @@ rsync -a ~/gokapi/config/ newbox:~/gokapi/config/</pre>
     </div>
   </section>
 
-  <p class="closing">That's the whole migration. <strong>No database to export, no cloud storage to reconnect</strong> — three folders, three <code>docker compose up</code> calls, two firewall rules per app.</p>
+  <p class="closing">That's the whole migration. <strong>No database to export, no cloud storage to reconnect</strong> — two folders, two <code>docker compose up</code> calls, one firewall rule per app.</p>
 
   <footer>
     <span>Part 3 of 3 — Shenzhen file-share stack</span>

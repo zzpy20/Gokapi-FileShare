@@ -298,7 +298,7 @@
     <div class="fork-branch">
       <span class="tag">If this is</span>
       <span class="verdict">A brand-new ECS instance</span>
-      <p>What's happened before (e.g. the sing-box rebuild after an IP ban) — none of the three apps exist on the new box yet. Follow <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a> first, then come back here for step 3 only.</p>
+      <p>What's happened before (e.g. the sing-box rebuild after an IP ban) — neither app exists on the new box yet. Follow <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a> first, then come back here for step 3 only.</p>
     </div>
   </div>
 
@@ -321,7 +321,6 @@
       <p>ECS → Security Groups → Configure Rules → add inbound TCP for each, source <code>0.0.0.0/0</code>:</p>
       <pre>22    (SSH)
 8080  (fileshare)
-9000  (quickshare-sz)
 9001  (gokapi)</pre>
       <p class="note">A new instance starts with a fresh security group — none of this carries over from the old box automatically, even if the IP swap felt instant.</p>
     </div>
@@ -331,10 +330,10 @@
         <h2>Fix Gokapi's saved URL</h2>
         <span class="run-on">on the server — ssh sz</span>
       </div>
-      <p>Gokapi is the only one of the three that bakes the IP into a config file, because it uses that value to build every share link it generates from here on.</p>
+      <p>Gokapi is the only one of the two that bakes the IP into a config file, because it uses that value to build every share link it generates from here on.</p>
       <pre>ssh sz 'sed -i "s|http://OLD_IP:9001/|http://NEW_IP:9001/|" ~/gokapi/config/config.json \
   && docker restart gokapi'</pre>
-      <p class="note"><code>fileshare</code> and <code>quickshare-sz</code> need nothing here — both build every link from the request itself, not a saved setting.</p>
+      <p class="note"><code>fileshare</code> needs nothing here — it builds every link from the request itself, not a saved setting.</p>
     </div>
 
     <div class="step">
@@ -345,10 +344,9 @@
       <p>Anyone holding a link with the old IP in it now has a dead link — that's just old text, no server-side fix reaches it. The base addresses are:</p>
       <div class="link-list">
         <div class="link-row"><span class="who">Browsable folder</span><span class="url">http://<span class="ph">NEW_IP</span>:8080/</span></div>
-        <div class="link-row"><span class="who">Private links</span><span class="url">http://<span class="ph">NEW_IP</span>:9000/</span></div>
         <div class="link-row"><span class="who">Expiring links</span><span class="url">http://<span class="ph">NEW_IP</span>:9001/admin</span></div>
       </div>
-      <p class="note">Individual quickshare-sz and Gokapi file links need regenerating from their admin pages — the id/filename stays the same, only the host part changed.</p>
+      <p class="note">Individual Gokapi file links need regenerating from its admin page — the id/filename stays the same, only the host part changed.</p>
     </div>
 
   </div>

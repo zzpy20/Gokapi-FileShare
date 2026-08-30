@@ -237,22 +237,6 @@
     </ul>
   </section>
 
-  <section>
-    <h2>Quick share — private one-off links</h2>
-    <p class="lede" style="margin-bottom:16px; font-size:0.92rem;">A second, separate app — a local clone of the quickshare tool on Cloudflare. No browsable listing: each upload gets its own private link, and that link is the only way to find the file.</p>
-    <div class="panel">
-      <div class="cmd-row">
-        <span class="what">Upload page:</span>
-        <pre>&lt;SERVER_IP&gt;:9000/</pre>
-      </div>
-      <div class="cmd-row">
-        <span class="what">Upload key (pasted into the page, not a browser prompt):</span>
-        <pre>set via UPLOAD_TOKEN in quickshare-sz/.env</pre>
-      </div>
-    </div>
-    <p class="lede" style="margin-top:14px; font-size:0.92rem;">Select one or more files at once — each gets its own independent link (e.g. <code>/f/&lt;id&gt;/name.ext</code>), so sharing several files still means sharing several separate links.</p>
-  </section>
-
   <footer>
     Source: <code>~/fileshare/server.py</code> on the server — one file, standard library only, nothing to install.
   </footer>
