@@ -8,3 +8,4 @@ services:
     volumes:
       - ./data:/app/data
       - ./config:/app/config
+      - ./custom:/app/custom

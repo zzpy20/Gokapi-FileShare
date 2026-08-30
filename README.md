@@ -42,6 +42,10 @@ The workaround, wired up as `gokapi/docker-compose.china.yml`:
 2. `scp` the resulting `gokapi/bin/` directory to the server.
 3. `docker compose -f docker-compose.china.yml up -d --build` — this builds a thin local image wrapping the binary instead of pulling a prebuilt one.
 
+#### Translating the public pages (Shenzhen box only)
+
+The Shenzhen deployment serves a mainland Chinese audience, so its public download/password pages are translated to Simplified Chinese via [`gokapi/custom/public.js`](gokapi/custom/public.js) — Gokapi's supported no-rebuild customization hook (it auto-loads any `custom/public.js` it finds, mounted at `/app/custom` in `docker-compose.china.yml`). Its `PublicName` config value is also set to `深圳文件快传` instead of an English name. This is scoped to that one deployment on purpose — other boxes running this repo keep the English UI unless you copy `custom/public.js` over and mount it the same way.
+
 ### Docs
 
 Four reference pages, published as standalone HTML (also mirrored in [`docs/`](docs/) here — English only, regardless of which repo language section you're reading):
@@ -98,6 +102,10 @@ docker compose up -d --build
 1. 在一台能正常访问互联网的机器上——**不是**目标服务器——运行 `gokapi/fetch-binary.sh` 下载 Gokapi 的发布二进制文件。
 2. 把生成的 `gokapi/bin/` 目录通过 `scp` 传到服务器上。
 3. 执行 `docker compose -f docker-compose.china.yml up -d --build`——这会基于该二进制文件在本地构建一个精简镜像，而不是拉取预先构建好的镜像。
+
+#### 公开页面翻译（仅限深圳服务器）
+
+深圳部署面向中国大陆用户，因此其公开下载页 / 密码验证页通过 [`gokapi/custom/public.js`](gokapi/custom/public.js) 翻译成简体中文——这是 Gokapi 官方支持的免重新构建自定义方式（只要在 `/app/custom` 下挂载一个 `custom/public.js`，Gokapi 会自动加载它，`docker-compose.china.yml` 里已经配好了这个挂载）。同时把 `PublicName` 配置项改成了「深圳文件快传」而不是英文名称。这个改动只作用于这一台服务器——用本仓库部署的其他服务器默认仍是英文界面，除非你把 `custom/public.js` 复制过去并按同样方式挂载。
 
 ### 文档
 
