@@ -283,8 +283,8 @@
       <dt>Manage it</dt>
       <dd>Everything happens at <code>http://&lt;ip&gt;:9001/admin</code> — upload, delete, view download counts, set expiry by date or by download count. There's nothing useful to do here over SSH.</dd>
 
-      <dt>The ⬇ icon</dt>
-      <dd>Avoid it if a download manager (Folx, etc.) intercepts your browser's downloads. It mints a one-time link valid for exactly <strong>30 seconds</strong>, deleted after first use — a queuing download manager easily misses that window and shows "invalid presign". Use the <strong>URL</strong> button instead; that's the plain, non-expiring share link with no such constraint.</dd>
+      <dt>Any ⬇ download button</dt>
+      <dd>On the Upload tab, on File Requests (both "download all" and per-file), any admin-side download click mints a one-time link and auto-fetches it in the same step. If a Mac download-manager app (Folx and similar) has a browser extension installed, it intercepts that fetch and breaks it mid-transfer — shows as "invalid presign" or a failed download, even on the very first try. <strong>Confirmed fix: use Safari</strong> (or any browser without that extension) for anything you download from the admin UI. On the Upload tab specifically, the <strong>URL</strong> button is also a safe alternative — that's a plain, non-expiring share link that never goes through the presign flow at all.</dd>
 
       <dt>Metadata</dt>
       <dd><code>~/gokapi/data/gokapi.sqlite</code> — don't hand-edit this; use the admin UI.</dd>
