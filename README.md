@@ -46,6 +46,8 @@ The workaround, wired up as `gokapi/docker-compose.china.yml`:
 
 The Shenzhen deployment serves a mainland Chinese audience, so its public download/password pages are translated to Simplified Chinese via [`gokapi/custom/public.js`](gokapi/custom/public.js) — Gokapi's supported no-rebuild customization hook (it auto-loads any `custom/public.js` it finds, mounted at `/app/custom` in `docker-compose.china.yml`). Its `PublicName` config value is also set to `深圳文件快传` instead of an English name. This is scoped to that one deployment on purpose — other boxes running this repo keep the English UI unless you copy `custom/public.js` over and mount it the same way.
 
+Gokapi caches `custom/public.js` for 2 days, so after editing it on the server, bump `custom/version.txt` (a plain integer, e.g. `echo 2 > version.txt`) and restart the container — this changes the script's URL and forces every client to fetch the new version instead of a stale cached copy.
+
 ### Docs
 
 Four reference pages, published as standalone HTML (also mirrored in [`docs/`](docs/) here — English only, regardless of which repo language section you're reading):
@@ -106,6 +108,8 @@ docker compose up -d --build
 #### 公开页面翻译（仅限深圳服务器）
 
 深圳部署面向中国大陆用户，因此其公开下载页 / 密码验证页通过 [`gokapi/custom/public.js`](gokapi/custom/public.js) 翻译成简体中文——这是 Gokapi 官方支持的免重新构建自定义方式（只要在 `/app/custom` 下挂载一个 `custom/public.js`，Gokapi 会自动加载它，`docker-compose.china.yml` 里已经配好了这个挂载）。同时把 `PublicName` 配置项改成了「深圳文件快传」而不是英文名称。这个改动只作用于这一台服务器——用本仓库部署的其他服务器默认仍是英文界面，除非你把 `custom/public.js` 复制过去并按同样方式挂载。
+
+Gokapi 会把 `custom/public.js` 缓存 2 天，所以在服务器上改完这个文件后，需要把 `custom/version.txt`（一个纯数字，比如执行 `echo 2 > version.txt`）加一并重启容器——这会让脚本的 URL 发生变化，逼所有客户端重新拉取新版本，而不是继续用缓存里的旧版本。
 
 ### 文档
 

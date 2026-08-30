@@ -12,7 +12,8 @@
     "Size": "大小",
     "Password required": "需要密码",
     "Incorrect password!": "密码错误！",
-    "Continue": "继续"
+    "Continue": "继续",
+    "Powered by": "技术支持来自"
   };
   var placeholderMap = {
     "Enter password": "请输入密码"
