@@ -1,0 +1,12 @@
+services:
+  fileshare:
+    build: .
+    container_name: fileshare
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./shared:/data
+    environment:
+      - UPLOAD_USER=${UPLOAD_USER}
+      - UPLOAD_PASS=${UPLOAD_PASS}

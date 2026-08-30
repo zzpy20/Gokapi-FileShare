@@ -1,0 +1,416 @@
+<title>New Box, Same Stack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #f4f5f2;
+    --paper-raised: #ffffff;
+    --ink: #1c231f;
+    --muted: #5b665f;
+    --line: #dbe1db;
+    --accent: #2f6f5e;
+    --accent-ink: #1d4a3d;
+    --accent-soft: #e2efe9;
+    --code-bg: #e7ece6;
+    --warn: #b5651d;
+    --warn-soft: #f8ecdd;
+    --warn-ink: #7a4213;
+    --path-a: #2f6f5e;
+    --path-a-soft: #e2efe9;
+    --path-b: #7a4c9e;
+    --path-b-soft: #efe6f5;
+    --shadow: 0 1px 2px rgba(20, 30, 25, 0.05), 0 10px 28px rgba(20, 30, 25, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12160f;
+      --paper-raised: #1b221b;
+      --ink: #e7ece5;
+      --muted: #93a196;
+      --line: #2b342b;
+      --accent: #6fbfa2;
+      --accent-ink: #bfe9d5;
+      --accent-soft: #1c2e26;
+      --code-bg: #202920;
+      --warn: #e0a15b;
+      --warn-soft: #332415;
+      --warn-ink: #f2c896;
+      --path-a: #6fbfa2;
+      --path-a-soft: #1c2e26;
+      --path-b: #c9a6e6;
+      --path-b-soft: #2a2033;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #12160f;
+    --paper-raised: #1b221b;
+    --ink: #e7ece5;
+    --muted: #93a196;
+    --line: #2b342b;
+    --accent: #6fbfa2;
+    --accent-ink: #bfe9d5;
+    --accent-soft: #1c2e26;
+    --code-bg: #202920;
+    --warn: #e0a15b;
+    --warn-soft: #332415;
+    --warn-ink: #f2c896;
+    --path-a: #6fbfa2;
+    --path-a-soft: #1c2e26;
+    --path-b: #c9a6e6;
+    --path-b-soft: #2a2033;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 100px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+
+  .lede {
+    color: var(--muted);
+    font-size: 1.08rem;
+    max-width: 60ch;
+    margin: 0 0 16px;
+  }
+
+  .lede-note {
+    color: var(--muted);
+    font-size: 0.92rem;
+    max-width: 60ch;
+    margin: 0 0 40px;
+    padding-left: 14px;
+    border-left: 2px solid var(--line);
+  }
+
+  h2 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.35rem;
+    margin: 0 0 4px;
+  }
+
+  h3 {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0 0 10px;
+  }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+  }
+
+  pre {
+    margin: 10px 0 0;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.84rem;
+    background: var(--code-bg);
+    padding: 12px 14px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.55;
+  }
+
+  section { margin-bottom: 44px; }
+
+  .section-sub {
+    color: var(--muted);
+    font-size: 0.94rem;
+    margin: 0 0 18px;
+  }
+
+  .app-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 26px 28px;
+  }
+
+  .port-tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    margin-left: 10px;
+  }
+
+  .app-head {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+
+  .twin-tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+
+  .mini-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .mini-step .label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .mini-step p { margin: 6px 0 0; font-size: 0.94rem; }
+
+  .paths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 620px) {
+    .paths { grid-template-columns: 1fr; }
+  }
+
+  .path-card {
+    border-radius: 10px;
+    padding: 22px 22px;
+    border: 1px solid var(--line);
+  }
+  .path-card.a { background: var(--path-a-soft); border-color: color-mix(in srgb, var(--path-a) 30%, var(--line)); }
+  .path-card.b { background: var(--path-b-soft); border-color: color-mix(in srgb, var(--path-b) 30%, var(--line)); }
+
+  .path-card .path-tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .path-card.a .path-tag { color: var(--path-a); }
+  .path-card.b .path-tag { color: var(--path-b); }
+
+  .path-card h3 { margin-bottom: 4px; }
+  .path-card .when { color: var(--muted); font-size: 0.88rem; margin: 0 0 14px; }
+  .path-card pre { background: rgba(0,0,0,0.045); }
+
+  .toggle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 20px;
+  }
+  @media (max-width: 620px) {
+    .toggle-row { grid-template-columns: 1fr; }
+  }
+
+  .callout {
+    margin-top: 8px;
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--line));
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .callout .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--warn-ink);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .callout p { margin: 0; color: var(--ink); font-size: 0.92rem; }
+  .callout code { font-size: 0.85em; }
+
+  .closing {
+    font-size: 0.98rem;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+  .closing strong { color: var(--ink); }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  a { color: var(--accent-ink); }
+  a:hover { color: var(--accent); }
+</style>
+
+<div class="page">
+
+  <span class="eyebrow">Shenzhen file-share stack · Part 3 of 3</span>
+  <h1>New Box, Same Stack</h1>
+  <p class="lede">All three apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Replicating one is copying four things and running one command.</p>
+  <p class="lede-note">Prerequisite on the new box — Ubuntu with Docker installed:</p>
+  <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
+sudo systemctl enable --now docker</pre>
+
+  <section>
+    <h2>fileshare &amp; quickshare-sz</h2>
+    <p class="twin-tag">identical pattern — both are the same custom Python script shape</p>
+    <div class="app-card">
+      <div class="mini-steps">
+        <div class="mini-step">
+          <div class="label">1 · Copy the folder over</div>
+          <pre>rsync -a ~/fileshare/ newbox:~/fileshare/
+rsync -a ~/quickshare-sz/ newbox:~/quickshare-sz/</pre>
+          <p>Brings the Dockerfile, docker-compose.yml, source, and — since nothing's excluded — the existing files too. Add <code>--exclude shared</code> / <code>--exclude data</code> if you want the new box to start empty.</p>
+        </div>
+        <div class="mini-step">
+          <div class="label">2 · Build and start</div>
+          <pre>ssh newbox 'cd ~/fileshare && docker compose up -d --build'
+ssh newbox 'cd ~/quickshare-sz && docker compose up -d --build'</pre>
+          <p>Both build from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</p>
+        </div>
+        <div class="mini-step">
+          <div class="label">3 · Rotate credentials, if this is a genuinely separate box</div>
+          <p>Edit <code>UPLOAD_USER</code> / <code>UPLOAD_PASS</code> in fileshare's <code>docker-compose.yml</code>, and <code>UPLOAD_TOKEN</code> in quickshare-sz's, before starting — unless you're intentionally standing up a duplicate of the same instance.</p>
+        </div>
+        <div class="mini-step">
+          <div class="label">4 · Open the ports</div>
+          <p>8080 and 9000, in whatever firewall or security-group system the new box's host uses.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>gokapi <span class="port-tag">:9001</span></h2>
+    <p class="section-sub">This is the one with a wrinkle — it ships as a third-party Docker Hub image, and that image is exactly what got blocked when we first built this on the Shenzhen box.</p>
+
+    <div class="paths">
+      <div class="path-card a">
+        <span class="path-tag">Path A</span>
+        <h3>Normal internet access</h3>
+        <p class="when">Outside mainland China, or any network that isn't sitting behind a Docker Hub mirror block.</p>
+        <p>Skip the Dockerfile entirely — just reference the upstream image:</p>
+        <pre>services:
+  gokapi:
+    image: f0rc3/gokapi:latest
+    container_name: gokapi
+    restart: unless-stopped
+    ports:
+      - "9001:53842"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config</pre>
+        <pre>ssh newbox 'cd ~/gokapi && docker compose up -d'</pre>
+      </div>
+
+      <div class="path-card b">
+        <span class="path-tag">Path B</span>
+        <h3>Registry blocked (what we hit)</h3>
+        <p class="when">Mainland China: the daocloud mirror 403s on third-party images, and 163's mirror is dead — its hostname doesn't even resolve.</p>
+        <p>Download the release from a machine with normal internet — <strong>not</strong> the blocked box — then transfer it over:</p>
+        <pre>curl -sL -o gokapi.zip \
+  https://github.com/Forceu/Gokapi/releases/download/v2.2.4/gokapi-2.2.4_linux-amd64.zip
+scp gokapi.zip newbox:~/gokapi/gokapi.zip</pre>
+        <p>Then build a thin wrapper around the raw binary instead of pulling a prebuilt image:</p>
+        <pre>ssh newbox '
+cd ~/gokapi
+python3 -c "import zipfile; zipfile.ZipFile(\"gokapi.zip\").extractall(\"bin\")"
+chmod +x bin/gokapi
+cat > Dockerfile &lt;&lt;EOF
+FROM alpine:latest
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY bin/gokapi /app/gokapi
+RUN mkdir -p /app/data /app/config
+EXPOSE 53842
+ENTRYPOINT ["/app/gokapi"]
+EOF
+docker compose up -d --build'</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Carrying over existing data</h2>
+    <p class="section-sub">Two honest options, not a default to feel bad about skipping.</p>
+    <div class="toggle-row">
+      <div class="path-card a">
+        <span class="path-tag">Fresh start</span>
+        <p>Don't copy <code>data/</code> or <code>config/</code> — every app happily initializes empty. Gokapi will ask you to run <code>/setup</code> again; fileshare and quickshare-sz need no setup step at all.</p>
+      </div>
+      <div class="path-card b">
+        <span class="path-tag">Same files, same links</span>
+        <pre>rsync -a ~/gokapi/data/ newbox:~/gokapi/data/
+rsync -a ~/gokapi/config/ newbox:~/gokapi/config/</pre>
+        <p>Carries over admin credentials and every file too. Do this and you still need one more edit —</p>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="tag">Don't forget</span>
+      <p>If you copied Gokapi's <code>config/</code> across, its saved <code>ServerUrl</code> still points at the old box's IP — every link it generates will be wrong until you update it. Same one-line fix as an IP change: see <a href="https://claude.ai/code/artifact/4572cf93-e3fb-4301-9ac8-b621ca557c24">Part 1, step 3</a>.</p>
+    </div>
+  </section>
+
+  <p class="closing">That's the whole migration. <strong>No database to export, no cloud storage to reconnect</strong> — three folders, three <code>docker compose up</code> calls, two firewall rules per app.</p>
+
+  <footer>
+    <span>Part 3 of 3 — Shenzhen file-share stack</span>
+    <span><a href="https://claude.ai/code/artifact/4572cf93-e3fb-4301-9ac8-b621ca557c24">Part 1: IP Change Checklist</a> · <a href="https://claude.ai/code/artifact/cf65ae65-3f4d-4419-9363-641fc6804a09">Part 2: Where Your Files Live</a></span>
+  </footer>
+
+</div>

@@ -1,0 +1,7 @@
+.env
+*/data/
+*/shared/
+*/config/
+*/bin/
+*.zip
+.DS_Store

@@ -1,0 +1,11 @@
+services:
+  quickshare-sz:
+    build: .
+    container_name: quickshare-sz
+    restart: unless-stopped
+    ports:
+      - "9000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - UPLOAD_TOKEN=${UPLOAD_TOKEN}

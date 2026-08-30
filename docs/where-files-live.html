@@ -1,0 +1,333 @@
+<title>Where Your Files Live</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #f4f5f2;
+    --paper-raised: #ffffff;
+    --ink: #1c231f;
+    --muted: #5b665f;
+    --line: #dbe1db;
+    --accent: #2f6f5e;
+    --accent-ink: #1d4a3d;
+    --accent-soft: #e2efe9;
+    --code-bg: #e7ece6;
+    --warn: #b5651d;
+    --warn-soft: #f8ecdd;
+    --warn-ink: #7a4213;
+    --shadow: 0 1px 2px rgba(20, 30, 25, 0.05), 0 10px 28px rgba(20, 30, 25, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12160f;
+      --paper-raised: #1b221b;
+      --ink: #e7ece5;
+      --muted: #93a196;
+      --line: #2b342b;
+      --accent: #6fbfa2;
+      --accent-ink: #bfe9d5;
+      --accent-soft: #1c2e26;
+      --code-bg: #202920;
+      --warn: #e0a15b;
+      --warn-soft: #332415;
+      --warn-ink: #f2c896;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #12160f;
+    --paper-raised: #1b221b;
+    --ink: #e7ece5;
+    --muted: #93a196;
+    --line: #2b342b;
+    --accent: #6fbfa2;
+    --accent-ink: #bfe9d5;
+    --accent-soft: #1c2e26;
+    --code-bg: #202920;
+    --warn: #e0a15b;
+    --warn-soft: #332415;
+    --warn-ink: #f2c896;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 100px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+
+  .lede {
+    color: var(--muted);
+    font-size: 1.08rem;
+    max-width: 60ch;
+    margin: 0 0 44px;
+  }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+  }
+
+  .app-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 26px 28px;
+    margin-bottom: 28px;
+  }
+
+  .app-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+
+  .app-head h2 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.35rem;
+    margin: 0;
+  }
+
+  .port-tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .app-sub {
+    color: var(--muted);
+    font-size: 0.94rem;
+    margin: 0 0 20px;
+  }
+
+  .fact-grid {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    row-gap: 14px;
+    column-gap: 18px;
+    font-size: 0.94rem;
+  }
+  @media (max-width: 500px) {
+    .fact-grid { grid-template-columns: 1fr; row-gap: 6px; }
+    .fact-grid dt { margin-top: 10px; }
+  }
+
+  .fact-grid dt {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 3px;
+  }
+
+  .fact-grid dd {
+    margin: 0;
+  }
+
+  .fact-grid pre {
+    margin: 6px 0 0;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.85rem;
+    background: var(--code-bg);
+    padding: 10px 13px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+  }
+
+  .fact-grid .muted { color: var(--muted); }
+
+  .stat {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .divider-note {
+    margin-top: 44px;
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--line));
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .divider-note .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--warn-ink);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .divider-note pre {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.85rem;
+    background: rgba(0,0,0,0.04);
+    padding: 10px 13px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 10px 0 0;
+  }
+  .divider-note p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  a { color: var(--accent-ink); }
+  a:hover { color: var(--accent); }
+</style>
+
+<div class="page">
+
+  <span class="eyebrow">Shenzhen file-share stack · Part 2 of 3</span>
+  <h1>Where Your Files Live</h1>
+  <p class="lede">Three apps, three different answers. This is the host path behind each link, how to add or remove something by hand, and what happens to it over time.</p>
+
+  <div class="app-card">
+    <div class="app-head">
+      <h2>fileshare</h2>
+      <span class="port-tag">:8080</span>
+    </div>
+    <p class="app-sub">The browsable folder — a directory listing, nothing hidden.</p>
+    <dl class="fact-grid">
+      <dt>Host path</dt>
+      <dd><code>~/fileshare/shared/</code> — real filenames, real subfolders, exactly as they sit on disk.</dd>
+
+      <dt>Add a file</dt>
+      <dd><pre>scp yourfile.pdf sz:~/fileshare/shared/</pre>or drag-and-drop at the password-gated <code>/upload</code> page.</dd>
+
+      <dt>Remove a file</dt>
+      <dd><pre>ssh sz 'rm ~/fileshare/shared/"yourfile.pdf"'</pre></dd>
+
+      <dt>List everything</dt>
+      <dd><pre>ssh sz 'ls -la ~/fileshare/shared/'</pre></dd>
+
+      <dt>Retention</dt>
+      <dd>Forever, until you delete it by hand — no expiry feature exists here.</dd>
+
+      <dt>Currently</dt>
+      <dd class="stat muted">216 KB across 2 files and 1 folder</dd>
+    </dl>
+  </div>
+
+  <div class="app-card">
+    <div class="app-head">
+      <h2>quickshare-sz</h2>
+      <span class="port-tag">:9000</span>
+    </div>
+    <p class="app-sub">One-off private links — no listing, the link is the only way in.</p>
+    <dl class="fact-grid">
+      <dt>Host path</dt>
+      <dd><code>~/quickshare-sz/data/&lt;id&gt;/&lt;filename&gt;</code> — every upload gets its own folder, and that random 12-character folder name <em>is</em> the id in the link.</dd>
+
+      <dt>Add a file</dt>
+      <dd>Only through the web upload page at <code>:9000</code>, pasting the upload key. The id has to come from the app itself, so there's no SSH shortcut for this one.</dd>
+
+      <dt>Remove a share</dt>
+      <dd><pre>ssh sz 'rm -rf ~/quickshare-sz/data/&lt;id&gt;/'</pre></dd>
+
+      <dt>List all shares</dt>
+      <dd><pre>ssh sz 'ls ~/quickshare-sz/data/'</pre>then look inside each folder for the filename.</dd>
+
+      <dt>Retention</dt>
+      <dd>Forever, no expiry — same as fileshare, just link-shaped instead of browsable.</dd>
+
+      <dt>Currently</dt>
+      <dd class="stat muted">5.7 MB across 9 shares</dd>
+    </dl>
+  </div>
+
+  <div class="app-card">
+    <div class="app-head">
+      <h2>gokapi</h2>
+      <span class="port-tag">:9001</span>
+    </div>
+    <p class="app-sub">Expiring links with a real admin UI — the only one of the three you don't manage by hand.</p>
+    <dl class="fact-grid">
+      <dt>Host path</dt>
+      <dd><code>~/gokapi/data/</code> — but files are encrypted at rest, so what's actually there is opaque hash-named blobs, not readable names or content.</dd>
+
+      <dt>Manage it</dt>
+      <dd>Everything happens at <code>http://&lt;ip&gt;:9001/admin</code> — upload, delete, view download counts, set expiry by date or by download count. There's nothing useful to do here over SSH.</dd>
+
+      <dt>Metadata</dt>
+      <dd><code>~/gokapi/data/gokapi.sqlite</code> — don't hand-edit this; use the admin UI.</dd>
+
+      <dt>Retention</dt>
+      <dd>Whatever expiry you set per file at upload — this is the only one of the three with real expiry.</dd>
+
+      <dt>Currently</dt>
+      <dd class="stat muted">3.7 MB across 3 uploads</dd>
+    </dl>
+  </div>
+
+  <div class="divider-note">
+    <span class="tag">To wipe an app completely</span>
+    <p>Irreversible — stop the container first, then clear its data directory and restart. Layouts differ, so do it per app:</p>
+    <pre>ssh sz 'cd ~/gokapi && docker compose down && rm -rf data/* config/* && docker compose up -d'</pre>
+    <p style="margin-top:8px;">Gokapi will ask you to run through <code>/setup</code> again afterward. fileshare and quickshare-sz just need their <code>shared/</code> or <code>data/</code> folder emptied the same way — no setup step to redo.</p>
+  </div>
+
+  <footer>
+    <span>Part 2 of 3 — Shenzhen file-share stack</span>
+    <span><a href="https://claude.ai/code/artifact/4572cf93-e3fb-4301-9ac8-b621ca557c24">Part 1: IP Change Checklist</a> · <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a></span>
+  </footer>
+
+</div>

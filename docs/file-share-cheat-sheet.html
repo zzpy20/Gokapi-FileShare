@@ -1,0 +1,260 @@
+<title>File Share Cheat Sheet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #f1f4f3;
+    --paper-raised: #ffffff;
+    --ink: #17212b;
+    --muted: #5c6b70;
+    --line: #d9e0de;
+    --accent: #1c7c82;
+    --accent-ink: #0f4b50;
+    --accent-soft: #e3f0ef;
+    --code-bg: #e9edec;
+    --shadow: 0 1px 2px rgba(23, 33, 43, 0.06), 0 8px 24px rgba(23, 33, 43, 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121a1d;
+      --paper-raised: #1b262a;
+      --ink: #e8eeec;
+      --muted: #93a3a2;
+      --line: #2b3639;
+      --accent: #59c4c0;
+      --accent-ink: #bfeee9;
+      --accent-soft: #1c2f2f;
+      --code-bg: #202b2e;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #121a1d;
+    --paper-raised: #1b262a;
+    --ink: #e8eeec;
+    --muted: #93a3a2;
+    --line: #2b3639;
+    --accent: #59c4c0;
+    --accent-ink: #bfeee9;
+    --accent-soft: #1c2f2f;
+    --code-bg: #202b2e;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.9rem, 4.5vw, 2.3rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+
+  .lede {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 56ch;
+    margin: 0 0 40px;
+  }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+  }
+
+  h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    margin: 0 0 14px;
+  }
+
+  section {
+    margin-top: 36px;
+  }
+
+  .panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+
+  .cmd-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .cmd-row:last-child { margin-bottom: 0; }
+
+  .cmd-row .what {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .cmd-row pre {
+    margin: 0;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.88rem;
+    background: var(--code-bg);
+    padding: 10px 14px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .link-box {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .link-box .url {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 1rem;
+    color: var(--accent-ink);
+  }
+
+  .link-box .note {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  ul.facts {
+    margin: 0;
+    padding-left: 1.2em;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  ul.facts li { margin-bottom: 6px; }
+  ul.facts li:last-child { margin-bottom: 0; }
+  ul.facts code { color: var(--ink); }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  a { color: var(--accent-ink); }
+  a:hover { color: var(--accent); }
+</style>
+
+<div class="page">
+
+  <span class="eyebrow">Shenzhen file share</span>
+  <h1>File Share Cheat Sheet</h1>
+  <p class="lede">Alist is retired. This is a single small script now — a folder on the server <em>is</em> the app. No accounts, no admin panel, nothing to configure.</p>
+
+  <section>
+    <h2>The link</h2>
+    <div class="panel link-box">
+      <span class="url">&lt;SERVER_IP&gt;:8080/</span>
+      <span class="note">unchanged — nothing to resend</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Add or remove a file</h2>
+    <div class="panel">
+      <div class="cmd-row">
+        <span class="what">Add a file — appears on the link instantly, no restart:</span>
+        <pre>scp yourfile.pdf sz:~/fileshare/shared/</pre>
+      </div>
+      <div class="cmd-row">
+        <span class="what">Remove a file:</span>
+        <pre>ssh sz 'rm ~/fileshare/shared/yourfile.pdf'</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Upload from a browser</h2>
+    <div class="panel">
+      <div class="cmd-row">
+        <span class="what">Upload page (password-protected — browser will prompt once and remember it):</span>
+        <pre>&lt;SERVER_IP&gt;:8080/upload</pre>
+      </div>
+      <div class="cmd-row">
+        <span class="what">Username / password</span>
+        <pre>set via UPLOAD_USER / UPLOAD_PASS in fileshare/.env</pre>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:14px; font-size:0.92rem;">Lets you upload files and create folders without SSH. Every folder listing also has a small "📤 上传 / 新建文件夹" link in the corner that opens this page pre-scoped to that folder.</p>
+  </section>
+
+  <section>
+    <h2>Good to know</h2>
+    <ul class="facts">
+      <li>Runs as Docker container <code>fileshare</code>, restarts automatically unless you stop it — survives crashes and reboots.</li>
+      <li>Files live at <code>~/fileshare/shared</code> on the server — that directory listing <em>is</em> the whole site.</li>
+      <li>PDFs and images open directly in the browser's own viewer — no external service involved, so nothing to be slow or blocked from China.</li>
+      <li>The old HTTPS link (port 9443) is gone along with Alist — this app is HTTP only, which was the friendlier link for friends anyway.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Quick share — private one-off links</h2>
+    <p class="lede" style="margin-bottom:16px; font-size:0.92rem;">A second, separate app — a local clone of the quickshare tool on Cloudflare. No browsable listing: each upload gets its own private link, and that link is the only way to find the file.</p>
+    <div class="panel">
+      <div class="cmd-row">
+        <span class="what">Upload page:</span>
+        <pre>&lt;SERVER_IP&gt;:9000/</pre>
+      </div>
+      <div class="cmd-row">
+        <span class="what">Upload key (pasted into the page, not a browser prompt):</span>
+        <pre>set via UPLOAD_TOKEN in quickshare-sz/.env</pre>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:14px; font-size:0.92rem;">Select one or more files at once — each gets its own independent link (e.g. <code>/f/&lt;id&gt;/name.ext</code>), so sharing several files still means sharing several separate links.</p>
+  </section>
+
+  <footer>
+    Source: <code>~/fileshare/server.py</code> on the server — one file, standard library only, nothing to install.
+  </footer>
+
+</div>

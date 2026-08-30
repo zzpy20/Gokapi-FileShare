@@ -1,0 +1,366 @@
+<title>IP Change Checklist</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #f4f5f2;
+    --paper-raised: #ffffff;
+    --ink: #1c231f;
+    --muted: #5b665f;
+    --line: #dbe1db;
+    --accent: #2f6f5e;
+    --accent-ink: #1d4a3d;
+    --accent-soft: #e2efe9;
+    --code-bg: #e7ece6;
+    --warn: #b5651d;
+    --warn-soft: #f8ecdd;
+    --warn-ink: #7a4213;
+    --shadow: 0 1px 2px rgba(20, 30, 25, 0.05), 0 10px 28px rgba(20, 30, 25, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12160f;
+      --paper-raised: #1b221b;
+      --ink: #e7ece5;
+      --muted: #93a196;
+      --line: #2b342b;
+      --accent: #6fbfa2;
+      --accent-ink: #bfe9d5;
+      --accent-soft: #1c2e26;
+      --code-bg: #202920;
+      --warn: #e0a15b;
+      --warn-soft: #332415;
+      --warn-ink: #f2c896;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #12160f;
+    --paper-raised: #1b221b;
+    --ink: #e7ece5;
+    --muted: #93a196;
+    --line: #2b342b;
+    --accent: #6fbfa2;
+    --accent-ink: #bfe9d5;
+    --accent-soft: #1c2e26;
+    --code-bg: #202920;
+    --warn: #e0a15b;
+    --warn-soft: #332415;
+    --warn-ink: #f2c896;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 56px 24px 100px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+
+  .lede {
+    color: var(--muted);
+    font-size: 1.08rem;
+    max-width: 58ch;
+    margin: 0 0 36px;
+  }
+
+  h2 {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin: 0 0 4px;
+  }
+
+  code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* fork / decision box */
+  .fork {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 22px 24px;
+    margin-bottom: 40px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 560px) {
+    .fork { grid-template-columns: 1fr; }
+  }
+  .fork-branch { display: flex; flex-direction: column; gap: 6px; }
+  .fork-branch .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .fork-branch .verdict {
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+  .fork-branch p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .fork-branch a { color: var(--accent-ink); font-weight: 500; }
+  .fork-divider {
+    display: none;
+  }
+  @media (min-width: 561px) {
+    .fork { position: relative; }
+    .fork::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 22px;
+      bottom: 22px;
+      width: 1px;
+      background: var(--line);
+    }
+  }
+
+  /* steps */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    counter-reset: step;
+  }
+
+  .step {
+    position: relative;
+    padding: 22px 0 22px 52px;
+    border-top: 1px solid var(--line);
+  }
+  .step:first-child { border-top: none; }
+
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 22px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    color: var(--accent-ink);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .run-on {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .run-on::before { content: "→ "; }
+
+  .step p { margin: 0 0 10px; color: var(--ink); }
+  .step p.note { color: var(--muted); font-size: 0.92rem; }
+
+  pre {
+    margin: 10px 0 0;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.86rem;
+    background: var(--code-bg);
+    padding: 12px 14px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+  }
+
+  .link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .link-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.92rem;
+  }
+  .link-row .who {
+    font-family: "IBM Plex Sans", sans-serif;
+    color: var(--muted);
+    font-size: 0.85rem;
+    min-width: 108px;
+  }
+  .link-row .url { color: var(--accent-ink); }
+  .link-row .ph { color: var(--warn-ink); font-weight: 600; }
+
+  .callout {
+    margin-top: 40px;
+    background: var(--warn-soft);
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--line));
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .callout .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--warn-ink);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .callout p { margin: 0; color: var(--ink); font-size: 0.94rem; }
+  .callout a { color: var(--warn-ink); font-weight: 600; }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--accent-ink); }
+  a { color: var(--accent-ink); }
+  a:hover { color: var(--accent); }
+</style>
+
+<div class="page">
+
+  <span class="eyebrow">Shenzhen file-share stack · Part 1 of 3</span>
+  <h1>IP Change Checklist</h1>
+  <p class="lede">Run this the moment the ECS's public IP changes. Fixing the one broken setting takes under a minute — the rest is just knowing what <em>doesn't</em> need touching.</p>
+
+  <div class="fork">
+    <div class="fork-branch">
+      <span class="tag">If this is</span>
+      <span class="verdict">Same instance, IP just reassigned</span>
+      <p>Rare on Aliyun unless you released and re-bound the elastic IP yourself. Everything below applies directly — start at step 1.</p>
+    </div>
+    <div class="fork-branch">
+      <span class="tag">If this is</span>
+      <span class="verdict">A brand-new ECS instance</span>
+      <p>What's happened before (e.g. the sing-box rebuild after an IP ban) — none of the three apps exist on the new box yet. Follow <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a> first, then come back here for step 3 only.</p>
+    </div>
+  </div>
+
+  <div class="steps">
+
+    <div class="step">
+      <div class="step-head">
+        <h2>Point the SSH hostname at the new IP</h2>
+        <span class="run-on">DNS provider for 1000600.xyz</span>
+      </div>
+      <p><code>shenzhen.1000600.xyz</code> currently resolves to the box's IP, and that's the hostname your <code>~/.ssh/config</code> uses for the <code>sz</code> alias — not the raw IP. Update that A record and <code>ssh sz</code> keeps working with nothing to change locally.</p>
+      <p class="note">Skip this and <code>ssh sz</code> will silently connect to the old, dead box.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head">
+        <h2>Open the ports on the new Security Group</h2>
+        <span class="run-on">Aliyun console</span>
+      </div>
+      <p>ECS → Security Groups → Configure Rules → add inbound TCP for each, source <code>0.0.0.0/0</code>:</p>
+      <pre>22    (SSH)
+8080  (fileshare)
+9000  (quickshare-sz)
+9001  (gokapi)</pre>
+      <p class="note">A new instance starts with a fresh security group — none of this carries over from the old box automatically, even if the IP swap felt instant.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head">
+        <h2>Fix Gokapi's saved URL</h2>
+        <span class="run-on">on the server — ssh sz</span>
+      </div>
+      <p>Gokapi is the only one of the three that bakes the IP into a config file, because it uses that value to build every share link it generates from here on.</p>
+      <pre>ssh sz 'sed -i "s|http://OLD_IP:9001/|http://NEW_IP:9001/|" ~/gokapi/config/config.json \
+  && docker restart gokapi'</pre>
+      <p class="note"><code>fileshare</code> and <code>quickshare-sz</code> need nothing here — both build every link from the request itself, not a saved setting.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head">
+        <h2>Re-send the links</h2>
+        <span class="run-on">to whoever's expecting a file</span>
+      </div>
+      <p>Anyone holding a link with the old IP in it now has a dead link — that's just old text, no server-side fix reaches it. The base addresses are:</p>
+      <div class="link-list">
+        <div class="link-row"><span class="who">Browsable folder</span><span class="url">http://<span class="ph">NEW_IP</span>:8080/</span></div>
+        <div class="link-row"><span class="who">Private links</span><span class="url">http://<span class="ph">NEW_IP</span>:9000/</span></div>
+        <div class="link-row"><span class="who">Expiring links</span><span class="url">http://<span class="ph">NEW_IP</span>:9001/admin</span></div>
+      </div>
+      <p class="note">Individual quickshare-sz and Gokapi file links need regenerating from their admin pages — the id/filename stays the same, only the host part changed.</p>
+    </div>
+
+  </div>
+
+  <div class="callout">
+    <span class="tag">Worth knowing</span>
+    <p>This whole checklist exists because the box deliberately uses a bare IP instead of a domain, to dodge mainland China's ICP filing requirement for anything reachable at a domain name. That trade-off is what makes IP changes disruptive in the first place — see the original setup notes if you ever want to reconsider it.</p>
+  </div>
+
+  <footer>
+    <span>Part 1 of 3 — Shenzhen file-share stack</span>
+    <span><a href="https://claude.ai/code/artifact/cf65ae65-3f4d-4419-9363-641fc6804a09">Part 2: Where Your Files Live</a> · <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a></span>
+  </footer>
+
+</div>

@@ -1,0 +1,10 @@
+services:
+  gokapi:
+    image: f0rc3/gokapi:latest
+    container_name: gokapi
+    restart: unless-stopped
+    ports:
+      - "9001:53842"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
