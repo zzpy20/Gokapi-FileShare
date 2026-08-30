@@ -307,6 +307,9 @@
       <dt>Manage it</dt>
       <dd>Everything happens at <code>http://&lt;ip&gt;:9001/admin</code> — upload, delete, view download counts, set expiry by date or by download count. There's nothing useful to do here over SSH.</dd>
 
+      <dt>The ⬇ icon</dt>
+      <dd>Avoid it if a download manager (Folx, etc.) intercepts your browser's downloads. It mints a one-time link valid for exactly <strong>30 seconds</strong>, deleted after first use — a queuing download manager easily misses that window and shows "invalid presign". Use the <strong>URL</strong> button instead; that's the plain, non-expiring share link with no such constraint.</dd>
+
       <dt>Metadata</dt>
       <dd><code>~/gokapi/data/gokapi.sqlite</code> — don't hand-edit this; use the admin UI.</dd>
 
