@@ -383,8 +383,8 @@
 
   <span class="eyebrow">Shenzhen file-share stack · Part 3 of 3</span>
   <h1>New Box, Same Stack</h1>
-  <p class="lede">Both apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Cloning the repo and running two commands gets both running.</p>
-  <p class="lede-note"><strong>Everything on this page runs in one SSH session, on the new box itself</strong> — no second computer involved unless a step below explicitly says otherwise (only one, near the end of the gokapi section, and only in a rare case).</p>
+  <p class="lede">For a fresh Ubuntu box <strong>outside mainland China</strong>. Both apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Cloning the repo and running two commands gets both running.</p>
+  <p class="lede-note"><strong>Everything on this page runs in one SSH session, on the new box itself</strong> — no second computer involved.</p>
 
   <section>
     <h2>Before either app: two one-time steps</h2>
@@ -428,7 +428,7 @@ nano .env</pre>
             <h3 style="margin:0;">Build and start it</h3>
           </div>
           <pre>docker compose up -d --build</pre>
-          <div class="expect">Expect to see: <strong>Successfully built ...</strong> followed by <strong>Container fileshare Started</strong>. Builds from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</div>
+          <div class="expect">Expect to see: <strong>Successfully built ...</strong> followed by <strong>Container fileshare Started</strong>.</div>
         </div>
         <div class="step">
           <div class="step-head">
@@ -450,50 +450,23 @@ nano .env</pre>
 
   <section>
     <h2>gokapi <span class="port-tag">:9001</span></h2>
-    <p class="section-sub">Mostly the same shape as fileshare, with one extra fork partway through. Don't try to guess in advance whether you need it — step 2 tells you, from what actually happens when you try the simple version first.</p>
-
     <div class="app-card">
       <div class="steps">
         <div class="step">
           <div class="step-head">
-            <h3 style="margin:0;">Move into its folder and try the simple version</h3>
+            <h3 style="margin:0;">Move into its folder and start it</h3>
           </div>
-          <pre>cd gokapi
+          <pre>cd ../gokapi
 docker compose up -d</pre>
-          <p>This pulls the official <code>f0rc3/gokapi</code> image straight from Docker Hub — no build step, works on most networks.</p>
+          <p>This pulls the official <code>f0rc3/gokapi</code> image straight from Docker Hub — no build step needed.</p>
         </div>
 
         <div class="step">
           <div class="step-head">
-            <h3 style="margin:0;">Check what happened</h3>
+            <h3 style="margin:0;">Confirm it's running</h3>
           </div>
           <pre>docker ps --filter name=gokapi</pre>
-          <div class="expect">
-            <strong>STATUS says "Up"</strong> → it worked. Skip straight to step 5.<br>
-            <strong>Command errored out instead</strong>, mentioning <code>403 Forbidden</code> or <code>failed to resolve reference</code> → this network blocks the image, the way mainland China's Docker Hub mirrors did on the original Shenzhen box. Continue to step 3.
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-head">
-            <h3 style="margin:0;">Fetch the binary directly instead</h3>
-          </div>
-          <p>Only needed if step 2 showed the blocked error. This downloads Gokapi's release straight from GitHub — no Docker Hub involved. Try it right here on the box first:</p>
-          <pre>./fetch-binary.sh</pre>
-          <div class="expect">
-            <strong>Works</strong> → creates a new <code>bin/gokapi</code> file, printing <strong>Done: ./bin/gokapi</strong>. Skip to step 4.<br>
-            <strong>Hangs or times out</strong> (rare — only seen on the original Shenzhen box, where even GitHub's release-download CDN was blocked separately from Docker Hub) → run <code>./fetch-binary.sh</code> on any other computer with normal internet instead, then <code>scp -r bin newbox:~/Gokapi-FileShare/gokapi/bin</code> to copy the result over, where <code>newbox</code> is however you reach this box over SSH.
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-head">
-            <h3 style="margin:0;">Build the local image and start it</h3>
-          </div>
-          <p>Only needed if you did step 3. This builds a small image wrapping the binary you just fetched, instead of pulling one.</p>
-          <pre>docker compose -f docker-compose.china.yml up -d --build
-docker ps --filter name=gokapi</pre>
-          <div class="expect">Same check as step 2 — <strong>STATUS</strong> should say <strong>Up</strong>.</div>
+          <div class="expect">The <strong>STATUS</strong> column should say <strong>Up</strong>.</div>
         </div>
 
         <div class="step">
