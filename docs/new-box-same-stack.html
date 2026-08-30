@@ -402,9 +402,8 @@ sudo systemctl enable --now docker</pre>
           <div class="step-head">
             <h3 style="margin:0;">Get the files onto the box</h3>
           </div>
-          <pre>git clone https://github.com/zzpy20/Gokapi-FileShare.git
-cd Gokapi-FileShare</pre>
-          <div class="expect">Creates a <code>Gokapi-FileShare</code> folder in your home directory, with <code>fileshare/</code> and <code>gokapi/</code> subfolders inside it. Every command below assumes you're inside this cloned folder — all paths are relative to it.</div>
+          <pre>git clone https://github.com/zzpy20/Gokapi-FileShare.git</pre>
+          <div class="expect">Creates <code>~/Gokapi-FileShare/</code> in your home directory, with <code>fileshare/</code> and <code>gokapi/</code> subfolders inside it. You don't need to <code>cd</code> into it now — every step below <code>cd</code>s there itself using the full path, so it works no matter what directory your shell happens to be in.</div>
         </div>
       </div>
     </div>
@@ -418,7 +417,7 @@ cd Gokapi-FileShare</pre>
           <div class="step-head">
             <h3 style="margin:0;">Move into its folder and set a password</h3>
           </div>
-          <pre>cd fileshare
+          <pre>cd ~/Gokapi-FileShare/fileshare
 cp .env.example .env
 nano .env</pre>
           <p>Change <code>UPLOAD_USER</code> and <code>UPLOAD_PASS</code> to real values, then save (in <code>nano</code>: <code>Ctrl+O</code>, Enter, <code>Ctrl+X</code>).</p>
@@ -456,7 +455,7 @@ nano .env</pre>
           <div class="step-head">
             <h3 style="margin:0;">Move into its folder and start it</h3>
           </div>
-          <pre>cd ../gokapi
+          <pre>cd ~/Gokapi-FileShare/gokapi
 docker compose up -d</pre>
           <p>This pulls the official <code>f0rc3/gokapi</code> image straight from Docker Hub — no build step needed.</p>
         </div>
