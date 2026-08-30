@@ -383,17 +383,16 @@
 
   <span class="eyebrow">Shenzhen file-share stack · Part 3 of 3</span>
   <h1>New Box, Same Stack</h1>
-  <p class="lede">Both apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Replicating one is copying four things and running one command.</p>
-  <p class="lede-note"><strong>Throughout this page,</strong> <code>newbox</code> stands for however you reach the new server — either an alias you've set up in <code>~/.ssh/config</code>, or just <code>root@its.ip.address</code>. Swap in whichever applies to you. Commands marked "on your Mac" run in a normal Terminal window on your own computer, where you already have the <code>Gokapi-FileShare</code> repo cloned; commands marked "on the new box" run after you've SSH'd in.</p>
+  <p class="lede">Both apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Cloning the repo and running two commands gets both running.</p>
+  <p class="lede-note"><strong>Everything on this page runs in one SSH session, on the new box itself</strong> — no second computer involved unless a step below explicitly says otherwise (only one, near the end of the gokapi section, and only in a rare case).</p>
 
   <section>
-    <h2>fileshare <span class="port-tag">:8080</span></h2>
+    <h2>Before either app: two one-time steps</h2>
     <div class="app-card">
       <div class="steps">
         <div class="step">
           <div class="step-head">
             <h3 style="margin:0;">Install Docker</h3>
-            <span class="run-on">on the new box</span>
           </div>
           <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
 sudo systemctl enable --now docker</pre>
@@ -401,18 +400,25 @@ sudo systemctl enable --now docker</pre>
         </div>
         <div class="step">
           <div class="step-head">
-            <h3 style="margin:0;">Copy the fileshare folder over</h3>
-            <span class="run-on">on your Mac</span>
+            <h3 style="margin:0;">Get the files onto the box</h3>
           </div>
-          <pre>rsync -a ~/Projects/Gokapi-FileShare/fileshare/ newbox:~/fileshare/</pre>
-          <p>Brings the Dockerfile, docker-compose.yml, and source. Add <code>--exclude shared</code> if you don't want to also carry over whatever files are currently in your local copy.</p>
+          <pre>git clone https://github.com/zzpy20/Gokapi-FileShare.git
+cd Gokapi-FileShare</pre>
+          <div class="expect">Creates a <code>Gokapi-FileShare</code> folder in your home directory, with <code>fileshare/</code> and <code>gokapi/</code> subfolders inside it. Every command below assumes you're inside this cloned folder — all paths are relative to it.</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>fileshare <span class="port-tag">:8080</span></h2>
+    <div class="app-card">
+      <div class="steps">
         <div class="step">
           <div class="step-head">
-            <h3 style="margin:0;">Set the upload password</h3>
-            <span class="run-on">on the new box</span>
+            <h3 style="margin:0;">Move into its folder and set a password</h3>
           </div>
-          <pre>cd ~/fileshare
+          <pre>cd fileshare
 cp .env.example .env
 nano .env</pre>
           <p>Change <code>UPLOAD_USER</code> and <code>UPLOAD_PASS</code> to real values, then save (in <code>nano</code>: <code>Ctrl+O</code>, Enter, <code>Ctrl+X</code>).</p>
@@ -420,7 +426,6 @@ nano .env</pre>
         <div class="step">
           <div class="step-head">
             <h3 style="margin:0;">Build and start it</h3>
-            <span class="run-on">on the new box</span>
           </div>
           <pre>docker compose up -d --build</pre>
           <div class="expect">Expect to see: <strong>Successfully built ...</strong> followed by <strong>Container fileshare Started</strong>. Builds from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</div>
@@ -428,10 +433,9 @@ nano .env</pre>
         <div class="step">
           <div class="step-head">
             <h3 style="margin:0;">Confirm it's running</h3>
-            <span class="run-on">on the new box</span>
           </div>
           <pre>docker ps --filter name=fileshare</pre>
-          <div class="expect">The <strong>STATUS</strong> column should say <strong>Up</strong>. If it says <strong>Restarting</strong> instead, run <code>docker logs fileshare</code> to see why — the most common cause is forgetting step 3.</div>
+          <div class="expect">The <strong>STATUS</strong> column should say <strong>Up</strong>. If it says <strong>Restarting</strong> instead, run <code>docker logs fileshare</code> to see why — the most common cause is forgetting the previous step.</div>
         </div>
         <div class="step">
           <div class="step-head">
@@ -446,77 +450,50 @@ nano .env</pre>
 
   <section>
     <h2>gokapi <span class="port-tag">:9001</span></h2>
-    <p class="section-sub">Same shape as fileshare, with one extra fork partway through. Don't try to guess in advance which branch you need — step 4 tells you how to tell, from what actually happens when you try the simple version first.</p>
+    <p class="section-sub">Mostly the same shape as fileshare, with one extra fork partway through. Don't try to guess in advance whether you need it — step 2 tells you, from what actually happens when you try the simple version first.</p>
 
     <div class="app-card">
       <div class="steps">
         <div class="step">
           <div class="step-head">
-            <h3 style="margin:0;">Install Docker</h3>
-            <span class="run-on">on the new box</span>
+            <h3 style="margin:0;">Move into its folder and try the simple version</h3>
           </div>
-          <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-sudo systemctl enable --now docker</pre>
-          <p class="note">Skip this if the box already has Docker — check with <code>docker --version</code> first.</p>
-        </div>
-
-        <div class="step">
-          <div class="step-head">
-            <h3 style="margin:0;">Copy the gokapi folder over</h3>
-            <span class="run-on">on your Mac</span>
-          </div>
-          <pre>rsync -a --exclude bin --exclude data --exclude config \
-  ~/Projects/Gokapi-FileShare/gokapi/ newbox:~/gokapi/</pre>
-          <p>Brings both compose files (<code>docker-compose.yml</code> and <code>docker-compose.china.yml</code>), the Dockerfile, and <code>fetch-binary.sh</code>. The three excluded folders are either build output or per-instance state — nothing you want copied from your laptop.</p>
-        </div>
-
-        <div class="step">
-          <div class="step-head">
-            <h3 style="margin:0;">Try the simple version first</h3>
-            <span class="run-on">on the new box</span>
-          </div>
-          <pre>cd ~/gokapi
+          <pre>cd gokapi
 docker compose up -d</pre>
-          <p>This pulls the official <code>f0rc3/gokapi</code> image straight from Docker Hub — no build step, works everywhere except mainland China.</p>
+          <p>This pulls the official <code>f0rc3/gokapi</code> image straight from Docker Hub — no build step, works on most networks.</p>
         </div>
 
         <div class="step">
           <div class="step-head">
             <h3 style="margin:0;">Check what happened</h3>
-            <span class="run-on">on the new box</span>
           </div>
           <pre>docker ps --filter name=gokapi</pre>
           <div class="expect">
-            <strong>STATUS says "Up"</strong> → it worked. Skip straight to step 7.<br>
-            <strong>Command errored out instead</strong>, mentioning <code>403 Forbidden</code> or <code>failed to resolve reference</code> → this network blocks the image, same as the Shenzhen box. Continue to step 5.
+            <strong>STATUS says "Up"</strong> → it worked. Skip straight to step 5.<br>
+            <strong>Command errored out instead</strong>, mentioning <code>403 Forbidden</code> or <code>failed to resolve reference</code> → this network blocks the image, the way mainland China's Docker Hub mirrors did on the original Shenzhen box. Continue to step 3.
           </div>
         </div>
 
         <div class="step">
           <div class="step-head">
             <h3 style="margin:0;">Fetch the binary directly instead</h3>
-            <span class="run-on">on your Mac</span>
           </div>
-          <p>Only needed if step 4 showed the blocked error. This downloads Gokapi's release straight from GitHub — no Docker Hub involved.</p>
-          <pre>cd ~/Projects/Gokapi-FileShare/gokapi
-./fetch-binary.sh</pre>
-          <div class="expect">Creates a new <code>bin/gokapi</code> file locally. You'll see <strong>Done: ./bin/gokapi</strong> when it finishes.</div>
-          <div class="substep">
-            <div class="sublabel">Then copy it to the new box</div>
-            <pre>scp -r bin newbox:~/gokapi/bin</pre>
+          <p>Only needed if step 2 showed the blocked error. This downloads Gokapi's release straight from GitHub — no Docker Hub involved. Try it right here on the box first:</p>
+          <pre>./fetch-binary.sh</pre>
+          <div class="expect">
+            <strong>Works</strong> → creates a new <code>bin/gokapi</code> file, printing <strong>Done: ./bin/gokapi</strong>. Skip to step 4.<br>
+            <strong>Hangs or times out</strong> (rare — only seen on the original Shenzhen box, where even GitHub's release-download CDN was blocked separately from Docker Hub) → run <code>./fetch-binary.sh</code> on any other computer with normal internet instead, then <code>scp -r bin newbox:~/Gokapi-FileShare/gokapi/bin</code> to copy the result over, where <code>newbox</code> is however you reach this box over SSH.
           </div>
         </div>
 
         <div class="step">
           <div class="step-head">
             <h3 style="margin:0;">Build the local image and start it</h3>
-            <span class="run-on">on the new box</span>
           </div>
-          <p>Only needed if you did step 5. This builds a small image wrapping the binary you just copied over, instead of pulling one.</p>
-          <pre>cd ~/gokapi
-docker compose -f docker-compose.china.yml up -d --build
+          <p>Only needed if you did step 3. This builds a small image wrapping the binary you just fetched, instead of pulling one.</p>
+          <pre>docker compose -f docker-compose.china.yml up -d --build
 docker ps --filter name=gokapi</pre>
-          <div class="expect">Same check as step 4 — <strong>STATUS</strong> should say <strong>Up</strong>.</div>
+          <div class="expect">Same check as step 2 — <strong>STATUS</strong> should say <strong>Up</strong>.</div>
         </div>
 
         <div class="step">
@@ -548,7 +525,7 @@ Encryption Level:    Level 1 - Local encryption / Key locally</pre>
             <span class="run-on">from any computer</span>
           </div>
           <pre>curl -I http://&lt;new box's IP&gt;:9001/</pre>
-          <div class="expect">Expect <strong>HTTP/1.1 200</strong>. If it hangs or times out, double-check step 7 — the port is almost always the culprit at this stage.</div>
+          <div class="expect">Expect <strong>HTTP/1.1 200</strong>. If it hangs or times out, double-check the previous port step — that's almost always the culprit at this stage.</div>
         </div>
       </div>
     </div>
@@ -564,9 +541,9 @@ Encryption Level:    Level 1 - Local encryption / Key locally</pre>
       </div>
       <div class="path-card b">
         <span class="path-tag">Same files, same links</span>
-        <pre>rsync -a ~/gokapi/data/ newbox:~/gokapi/data/
-rsync -a ~/gokapi/config/ newbox:~/gokapi/config/</pre>
-        <p>Carries over admin credentials and every file too. Do this and you still need one more edit —</p>
+        <pre>rsync -a ~/gokapi/data/ newbox:~/Gokapi-FileShare/gokapi/data/
+rsync -a ~/gokapi/config/ newbox:~/Gokapi-FileShare/gokapi/config/</pre>
+        <p>Run from the <strong>old</strong> box, where gokapi's data actually lives at <code>~/gokapi/</code>. <code>newbox</code> is however you reach the new box over SSH. Carries over admin credentials and every file too. Do this and you still need one more edit —</p>
       </div>
     </div>
     <div class="callout">
