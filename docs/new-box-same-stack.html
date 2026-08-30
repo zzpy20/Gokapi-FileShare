@@ -274,6 +274,88 @@
   .callout p { margin: 0; color: var(--ink); font-size: 0.92rem; }
   .callout code { font-size: 0.85em; }
 
+  /* numbered steps (matches Part 1's style) */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    counter-reset: step;
+    margin-top: 18px;
+  }
+
+  .step {
+    position: relative;
+    padding: 22px 0 22px 52px;
+    border-top: 1px solid var(--line);
+  }
+  .step:first-child { border-top: none; padding-top: 4px; }
+
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 22px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    color: var(--accent-ink);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step:first-child::before { top: 4px; }
+
+  .step-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .run-on {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .run-on::before { content: "→ "; }
+
+  .step p { margin: 0 0 10px; color: var(--ink); }
+  .step p.note { color: var(--muted); font-size: 0.92rem; margin-top: 10px; }
+  .step p:last-child { margin-bottom: 0; }
+  .step pre:last-child { margin-bottom: 0; }
+
+  .expect {
+    margin-top: 10px;
+    font-size: 0.88rem;
+    color: var(--muted);
+    padding-left: 12px;
+    border-left: 2px solid var(--line);
+  }
+  .expect strong { color: var(--ink); }
+
+  .substep {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+  }
+  .substep .sublabel {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
   .closing {
     font-size: 0.98rem;
     color: var(--muted);
@@ -302,31 +384,61 @@
   <span class="eyebrow">Shenzhen file-share stack · Part 3 of 3</span>
   <h1>New Box, Same Stack</h1>
   <p class="lede">Both apps are plain Docker Compose services with local bind-mount volumes — no shared database, no cloud storage, nothing else to migrate. Replicating one is copying four things and running one command.</p>
-  <p class="lede-note">Prerequisite on the new box — Ubuntu with Docker installed:</p>
-  <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
-sudo systemctl enable --now docker</pre>
+  <p class="lede-note"><strong>Throughout this page,</strong> <code>newbox</code> stands for however you reach the new server — either an alias you've set up in <code>~/.ssh/config</code>, or just <code>root@its.ip.address</code>. Swap in whichever applies to you. Commands marked "on your Mac" run in a normal Terminal window on your own computer, where you already have the <code>Gokapi-FileShare</code> repo cloned; commands marked "on the new box" run after you've SSH'd in.</p>
 
   <section>
     <h2>fileshare <span class="port-tag">:8080</span></h2>
     <div class="app-card">
-      <div class="mini-steps">
-        <div class="mini-step">
-          <div class="label">1 · Copy the folder over</div>
-          <pre>rsync -a ~/fileshare/ newbox:~/fileshare/</pre>
-          <p>Brings the Dockerfile, docker-compose.yml, source, and — since nothing's excluded — the existing files too. Add <code>--exclude shared</code> if you want the new box to start empty.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Install Docker</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
+sudo systemctl enable --now docker</pre>
+          <p class="note">Skip this if the box already has Docker — check with <code>docker --version</code> first.</p>
         </div>
-        <div class="mini-step">
-          <div class="label">2 · Build and start</div>
-          <pre>ssh newbox 'cd ~/fileshare && docker compose up -d --build'</pre>
-          <p>Builds from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</p>
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Copy the fileshare folder over</h3>
+            <span class="run-on">on your Mac</span>
+          </div>
+          <pre>rsync -a ~/Projects/Gokapi-FileShare/fileshare/ newbox:~/fileshare/</pre>
+          <p>Brings the Dockerfile, docker-compose.yml, and source. Add <code>--exclude shared</code> if you don't want to also carry over whatever files are currently in your local copy.</p>
         </div>
-        <div class="mini-step">
-          <div class="label">3 · Rotate credentials, if this is a genuinely separate box</div>
-          <p>Edit <code>UPLOAD_USER</code> / <code>UPLOAD_PASS</code> in <code>docker-compose.yml</code> before starting — unless you're intentionally standing up a duplicate of the same instance.</p>
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Set the upload password</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>cd ~/fileshare
+cp .env.example .env
+nano .env</pre>
+          <p>Change <code>UPLOAD_USER</code> and <code>UPLOAD_PASS</code> to real values, then save (in <code>nano</code>: <code>Ctrl+O</code>, Enter, <code>Ctrl+X</code>).</p>
         </div>
-        <div class="mini-step">
-          <div class="label">4 · Open the port</div>
-          <p>8080, in whatever firewall or security-group system the new box's host uses.</p>
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Build and start it</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>docker compose up -d --build</pre>
+          <div class="expect">Expect to see: <strong>Successfully built ...</strong> followed by <strong>Container fileshare Started</strong>. Builds from the official <code>python:3.12-alpine</code> image, which pulls normally anywhere — mainland China included.</div>
+        </div>
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Confirm it's running</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>docker ps --filter name=fileshare</pre>
+          <div class="expect">The <strong>STATUS</strong> column should say <strong>Up</strong>. If it says <strong>Restarting</strong> instead, run <code>docker logs fileshare</code> to see why — the most common cause is forgetting step 3.</div>
+        </div>
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Open the port</h3>
+            <span class="run-on">firewall / security group</span>
+          </div>
+          <p>Allow inbound TCP on port <strong>8080</strong> from <code>0.0.0.0/0</code> — in Aliyun's console under ECS → Security Groups, or with <code>sudo ufw allow 8080/tcp</code> if the box uses <code>ufw</code>.</p>
         </div>
       </div>
     </div>
@@ -334,50 +446,110 @@ sudo systemctl enable --now docker</pre>
 
   <section>
     <h2>gokapi <span class="port-tag">:9001</span></h2>
-    <p class="section-sub">This is the one with a wrinkle — it ships as a third-party Docker Hub image, and that image is exactly what got blocked when we first built this on the Shenzhen box.</p>
+    <p class="section-sub">Same shape as fileshare, with one extra fork partway through. Don't try to guess in advance which branch you need — step 4 tells you how to tell, from what actually happens when you try the simple version first.</p>
 
-    <div class="paths">
-      <div class="path-card a">
-        <span class="path-tag">Path A</span>
-        <h3>Normal internet access</h3>
-        <p class="when">Outside mainland China, or any network that isn't sitting behind a Docker Hub mirror block.</p>
-        <p>Skip the Dockerfile entirely — just reference the upstream image:</p>
-        <pre>services:
-  gokapi:
-    image: f0rc3/gokapi:latest
-    container_name: gokapi
-    restart: unless-stopped
-    ports:
-      - "9001:53842"
-    volumes:
-      - ./data:/app/data
-      - ./config:/app/config</pre>
-        <pre>ssh newbox 'cd ~/gokapi && docker compose up -d'</pre>
-      </div>
+    <div class="app-card">
+      <div class="steps">
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Install Docker</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>sudo apt update && sudo apt install -y docker.io docker-compose-plugin
+sudo systemctl enable --now docker</pre>
+          <p class="note">Skip this if the box already has Docker — check with <code>docker --version</code> first.</p>
+        </div>
 
-      <div class="path-card b">
-        <span class="path-tag">Path B</span>
-        <h3>Registry blocked (what we hit)</h3>
-        <p class="when">Mainland China: the daocloud mirror 403s on third-party images, and 163's mirror is dead — its hostname doesn't even resolve.</p>
-        <p>Download the release from a machine with normal internet — <strong>not</strong> the blocked box — then transfer it over:</p>
-        <pre>curl -sL -o gokapi.zip \
-  https://github.com/Forceu/Gokapi/releases/download/v2.2.4/gokapi-2.2.4_linux-amd64.zip
-scp gokapi.zip newbox:~/gokapi/gokapi.zip</pre>
-        <p>Then build a thin wrapper around the raw binary instead of pulling a prebuilt image:</p>
-        <pre>ssh newbox '
-cd ~/gokapi
-python3 -c "import zipfile; zipfile.ZipFile(\"gokapi.zip\").extractall(\"bin\")"
-chmod +x bin/gokapi
-cat > Dockerfile &lt;&lt;EOF
-FROM alpine:latest
-RUN apk add --no-cache ca-certificates
-WORKDIR /app
-COPY bin/gokapi /app/gokapi
-RUN mkdir -p /app/data /app/config
-EXPOSE 53842
-ENTRYPOINT ["/app/gokapi"]
-EOF
-docker compose up -d --build'</pre>
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Copy the gokapi folder over</h3>
+            <span class="run-on">on your Mac</span>
+          </div>
+          <pre>rsync -a --exclude bin --exclude data --exclude config \
+  ~/Projects/Gokapi-FileShare/gokapi/ newbox:~/gokapi/</pre>
+          <p>Brings both compose files (<code>docker-compose.yml</code> and <code>docker-compose.china.yml</code>), the Dockerfile, and <code>fetch-binary.sh</code>. The three excluded folders are either build output or per-instance state — nothing you want copied from your laptop.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Try the simple version first</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>cd ~/gokapi
+docker compose up -d</pre>
+          <p>This pulls the official <code>f0rc3/gokapi</code> image straight from Docker Hub — no build step, works everywhere except mainland China.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Check what happened</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <pre>docker ps --filter name=gokapi</pre>
+          <div class="expect">
+            <strong>STATUS says "Up"</strong> → it worked. Skip straight to step 7.<br>
+            <strong>Command errored out instead</strong>, mentioning <code>403 Forbidden</code> or <code>failed to resolve reference</code> → this network blocks the image, same as the Shenzhen box. Continue to step 5.
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Fetch the binary directly instead</h3>
+            <span class="run-on">on your Mac</span>
+          </div>
+          <p>Only needed if step 4 showed the blocked error. This downloads Gokapi's release straight from GitHub — no Docker Hub involved.</p>
+          <pre>cd ~/Projects/Gokapi-FileShare/gokapi
+./fetch-binary.sh</pre>
+          <div class="expect">Creates a new <code>bin/gokapi</code> file locally. You'll see <strong>Done: ./bin/gokapi</strong> when it finishes.</div>
+          <div class="substep">
+            <div class="sublabel">Then copy it to the new box</div>
+            <pre>scp -r bin newbox:~/gokapi/bin</pre>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Build the local image and start it</h3>
+            <span class="run-on">on the new box</span>
+          </div>
+          <p>Only needed if you did step 5. This builds a small image wrapping the binary you just copied over, instead of pulling one.</p>
+          <pre>cd ~/gokapi
+docker compose -f docker-compose.china.yml up -d --build
+docker ps --filter name=gokapi</pre>
+          <div class="expect">Same check as step 4 — <strong>STATUS</strong> should say <strong>Up</strong>.</div>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Open the port</h3>
+            <span class="run-on">firewall / security group</span>
+          </div>
+          <p>Allow inbound TCP on port <strong>9001</strong> from <code>0.0.0.0/0</code> — same place you opened 8080 for fileshare.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Finish setup in the browser</h3>
+            <span class="run-on">from any computer</span>
+          </div>
+          <p>Visit <code>http://&lt;new box's IP&gt;:9001/setup</code> and click through the wizard. Recommended choices, same as the original Shenzhen setup:</p>
+          <pre>Database:            SQLite (leave the default path)
+Bind to localhost:   No
+Use SSL:             No
+Log IP on download:  No
+Include filename:    Yes
+Encryption Level:    Level 1 - Local encryption / Key locally</pre>
+          <p>On the Credentials screen, set a real admin username and password — this is the login you'll use at <code>/admin</code> from now on.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <h3 style="margin:0;">Confirm it's reachable</h3>
+            <span class="run-on">from any computer</span>
+          </div>
+          <pre>curl -I http://&lt;new box's IP&gt;:9001/</pre>
+          <div class="expect">Expect <strong>HTTP/1.1 200</strong>. If it hangs or times out, double-check step 7 — the port is almost always the culprit at this stage.</div>
+        </div>
       </div>
     </div>
   </section>
