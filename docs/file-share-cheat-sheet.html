@@ -226,10 +226,10 @@
   </section>
 
   <section>
-    <h2>Upload from a browser</h2>
+    <h2>The management page</h2>
     <div class="panel">
       <div class="cmd-row">
-        <span class="what">Upload page — type or bookmark this address (password-protected — browser will prompt once and remember it):</span>
+        <span class="what">Management page — type or bookmark this address (password-protected — browser will prompt once and remember it):</span>
         <pre>&lt;SERVER_IP&gt;:8080/upload</pre>
       </div>
       <div class="cmd-row">
@@ -240,11 +240,13 @@ in the gitignored .env at the root of the Gokapi-FileShare repo</pre>
       </div>
     </div>
     <ul class="facts" style="margin-top:14px;">
-      <li><strong>Upload:</strong> drag files onto the drop area, or pick them and press 上传. A bar shows the percentage. A file with a name that already exists is kept alongside it as <code>name (1).ext</code>, never replaced.</li>
-      <li><strong>Rename, delete, new folder:</strong> you stay on this page afterwards and a line at the top says what happened.</li>
-      <li><strong>🔒 设密码:</strong> on a top-level folder, gives it its own viewing password. Leave it empty to go back to the shared one. The current password is shown in the box.</li>
-      <li><strong>⏳ 设到期:</strong> on a top-level folder, enter a number of days. When they are up the folder and everything in it is deleted automatically, with no undo. Empty or 0 cancels it.</li>
-      <li><strong>🔗 复制链接:</strong> the same copy-link button as the public listing.</li>
+      <li><strong>Layout:</strong> upload and new-folder sit at the top; below them is the list of what is in the current folder. The path under the title (<code>根目录 / folder</code>) is clickable, and clicking a folder's name opens its own management page.</li>
+      <li><strong>Upload:</strong> drag files onto the dashed area, or click it to pick them, then press 上传. A bar shows the percentage. A file whose name already exists is kept alongside it as <code>name (1).ext</code>, never replaced.</li>
+      <li><strong>Each row has three buttons:</strong> 🔗 复制链接 copies the item's direct link, ⚙ 设置 opens its settings underneath, and 删除 removes it after a confirmation.</li>
+      <li><strong>⚙ 设置 → 改名:</strong> rename a file or folder. A name that is already taken is refused.</li>
+      <li><strong>⚙ 设置 → 访问密码</strong> (top-level folders only): gives that folder its own viewing password; the current one is shown in the box. Leave it empty to go back to the shared password. A folder with its own password shows a 🔒 独立密码 badge.</li>
+      <li><strong>⚙ 设置 → 几天后自动删除</strong> (top-level folders only): enter a number of days from now. When they are up the folder and everything in it is deleted automatically, with no undo; a red badge on the row shows the date and days left. Empty or 0 cancels it.</li>
+      <li>After any change you stay on this page and a line at the top says what happened.</li>
       <li>Visitors never see a link to this page. Once you have logged in here, your own browser shows a "🛠 管理文件" link on every folder listing until it forgets the login.</li>
     </ul>
   </section>
