@@ -20,6 +20,8 @@ Deliberately reachable by bare IP, not a domain — mainland China requires ICP 
 
 `fileshare` replaced [Filebrowser](https://github.com/filebrowser/filebrowser), then [Alist](https://github.com/AlistGo/alist) — Filebrowser archives 2026-09-01 with no further releases, and Alist ended up being more than this needed. `gokapi` was added afterward to cover one-off private links with real expiry, a role a since-removed companion app (`quickshare-sz`) used to fill.
 
+**Gokapi's bare address redirects away on purpose.** Opening `http://<host>:9001/` sends you to Gokapi's GitHub page — it has no public home page, and its `RedirectUrl` setting (in `gokapi/config/config.json` on the box) is still the default. That is not a fault. The admin login is at `http://<host>:9001/admin`; shared files use their own download links.
+
 ### Running one
 
 Each app directory is self-contained:
@@ -71,7 +73,7 @@ Four reference pages, published as standalone HTML (also mirrored in [`docs/`](d
 
 ### Security notes
 
-- Every credential in this repo's compose files is a placeholder read from a **gitignored** `.env` — real values never enter git history. The master copy of every password (fileshare's upload login and both boxes' Gokapi admin logins) is the gitignored `.env` at the root of the local clone on Alan's Mac. A forgotten Gokapi admin password can't be read back from the box (only a hash is stored) — reset it with `gokapi --deployment-password <new>` while the container is stopped, then save the new value in that `.env`.
+- Every credential in this repo's compose files is a placeholder read from a **gitignored** `.env` — real values never enter git history. The master copy of every password (fileshare's upload login and both boxes' Gokapi admin logins) is the gitignored `.env` at the root of the local clone on Alan's Mac. A forgotten Gokapi admin password can't be read back from the box (only a hash is stored) — reset it with `gokapi --deployment-password <new>` while the container is stopped, then save the new value in that `.env`. One exception as currently deployed: on the Shenzhen box, `fileshare`'s compose file has its username and password written in directly rather than read from a `.env` — that edited copy exists only on the box, not in this repo.
 - `gokapi`'s data directory is encrypted at rest (Level 1 — local key, so the container still restarts unattended after a crash or reboot without manual intervention).
 - `fileshare` stores files unencrypted, as plain filesystem paths — access control is entirely "does the link/password, whichever the app uses."
 
@@ -94,6 +96,8 @@ Four reference pages, published as standalone HTML (also mirrored in [`docs/`](d
 | [`gokapi/`](gokapi/) | 9001 | 带真正管理界面、静态加密的到期链接 | [Gokapi](https://github.com/Forceu/Gokapi) |
 
 `fileshare` 先后替代了 [Filebrowser](https://github.com/filebrowser/filebrowser) 和 [Alist](https://github.com/AlistGo/alist)——Filebrowser 将于 2026-09-01 归档、不再有后续发布，而 Alist 的功能则超出了实际需求。`gokapi` 是之后加入的，用来覆盖一次性私密链接、带真正到期机制的场景——这个角色以前由已下线的伴生应用 `quickshare-sz` 承担。
+
+**Gokapi 的裸地址是故意跳走的。** 打开 `http://<主机>:9001/` 会被带到 Gokapi 的 GitHub 页面——它没有公开首页，而 `RedirectUrl` 这个设置（在服务器上的 `gokapi/config/config.json` 里）还是默认值。这不是故障。管理员登录入口是 `http://<主机>:9001/admin`；分享出去的文件各有自己的下载链接。
 
 ### 运行某个应用
 
@@ -146,7 +150,7 @@ bash gokapi/clear-all.sh sg -y   # 跳过确认提问
 
 ### 安全说明
 
-- 本仓库 compose 文件中的所有凭据都只是占位符，真实值从被 gitignore 排除在外的 `.env` 文件中读取——真实值从未进入 git 历史记录。所有密码（fileshare 的上传登录，以及两台机器上 Gokapi 的管理员登录）的主副本，是 Alan 的 Mac 上本地仓库根目录下那个被 gitignore 排除的 `.env`。Gokapi 管理员密码忘了的话无法从服务器上读回（服务器只存哈希）——在容器停止的状态下用 `gokapi --deployment-password <新密码>` 重置，再把新值存进这个 `.env`。
+- 本仓库 compose 文件中的所有凭据都只是占位符，真实值从被 gitignore 排除在外的 `.env` 文件中读取——真实值从未进入 git 历史记录。所有密码（fileshare 的上传登录，以及两台机器上 Gokapi 的管理员登录）的主副本，是 Alan 的 Mac 上本地仓库根目录下那个被 gitignore 排除的 `.env`。Gokapi 管理员密码忘了的话无法从服务器上读回（服务器只存哈希）——在容器停止的状态下用 `gokapi --deployment-password <新密码>` 重置，再把新值存进这个 `.env`。目前实际部署中有一个例外：深圳服务器上 `fileshare` 的 compose 文件是把用户名和密码直接写在里面的，而不是从 `.env` 读取——这份改过的副本只存在于服务器上，不在本仓库里。
 - `gokapi` 的数据目录是静态加密的（Level 1——密钥保存在本地，因此容器在崩溃或重启后仍能无人值守自动恢复）。
 - `fileshare` 未加密存储文件，直接以明文文件系统路径存放——访问控制完全依赖链接和密码。
 
