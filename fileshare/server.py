@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Minimal file-sharing server: public read-only listing/download, plus an
-authenticated /upload page for adding files and creating folders."""
+"""Minimal file-sharing server: read-only listing/download (optionally behind a
+shared viewing password), plus an authenticated /upload page for adding files
+and creating folders."""
 import base64
+import hashlib
+import hmac
 import html
 import io
 import os
@@ -15,6 +18,11 @@ SHARE_DIR = os.path.abspath(os.environ.get("SHARE_DIR", "/data"))
 PORT = int(os.environ.get("PORT", "8000"))
 UPLOAD_USER = os.environ.get("UPLOAD_USER", "admin")
 UPLOAD_PASS = os.environ.get("UPLOAD_PASS", "")
+# Optional shared password visitors must enter before they can open anything.
+# Empty = no viewing password (browsing is open to anyone with a link).
+VIEW_PASS = os.environ.get("VIEW_PASS", "")
+VIEW_COOKIE = "fileshare_view"
+VIEW_COOKIE_DAYS = 30
 MAX_UPLOAD_BYTES = 500 * 1024 * 1024  # 500MB per request
 
 ICONS = {
@@ -90,6 +98,13 @@ PAGE_STYLE = """
   }
   .btn-mini:hover { opacity:.85; }
   .btn-mini.btn-danger { background:#f7e9e5; color:#a8452e; }
+  .progress { margin-top:14px; }
+  .progress-track { height:10px; background:var(--accent-soft); border-radius:5px; overflow:hidden; }
+  .progress-fill { height:100%; width:0; background:var(--accent); transition:width .15s linear; }
+  .progress-text { display:flex; justify-content:space-between; gap:12px; margin-top:6px; font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .progress.err .progress-fill { background:#a8452e; }
+  .progress.err .progress-text { color:#a8452e; }
+  .panel button:disabled { opacity:.5; cursor:default; }
   @media (max-width:640px) {
     .panel { padding:16px 14px; }
     .panel thead { display:none; }
@@ -130,6 +145,50 @@ LIST_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>"""
 
+PRIVATE_ROOT_TEMPLATE = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>文件分享</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>{style}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><h1>📁 文件分享</h1></div>
+  <table><tbody>
+    <tr><td class="empty">请使用收到的分享链接打开对应的文件夹或文件。</td></tr>
+  </tbody></table>
+</div>
+</body>
+</html>"""
+
+LOGIN_TEMPLATE = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>文件分享</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>{style}
+  .login {{ max-width:420px; margin:8vh auto 0; }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel login">
+    <h2>🔒 请输入访问密码</h2>
+    {message}
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="{next_attr}">
+      <label for="view-password">访问密码</label>
+      <input type="text" id="view-password" name="password" autocomplete="off" autocapitalize="off" autofocus required>
+      <button type="submit">进入</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>"""
+
 COPY_SCRIPT = """<script>
 function copyLink(url, btn) {
   var original = btn.innerHTML;
@@ -155,6 +214,78 @@ function copyLink(url, btn) {
     fallback();
   }
 }
+</script>"""
+
+# Sends the upload form in the background so the page can show how far it has got.
+# Without JavaScript the form still submits the ordinary way.
+UPLOAD_SCRIPT = """<script>
+(function () {
+  var form = document.getElementById('upload-form');
+  if (!form || !window.XMLHttpRequest || !window.FormData) return;
+  var input = document.getElementById('upload-files');
+  var button = document.getElementById('upload-button');
+  var box = document.getElementById('upload-progress');
+  var fill = document.getElementById('upload-fill');
+  var status = document.getElementById('upload-status');
+  var percent = document.getElementById('upload-percent');
+  var MAX_BYTES = __MAX_BYTES__;
+
+  function size(n) {
+    var units = ['B', 'KB', 'MB', 'GB'], i = 0;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+    return (i === 0 ? n : n.toFixed(1)) + units[i];
+  }
+  function show(text, pct, isError) {
+    box.hidden = false;
+    box.className = 'progress' + (isError ? ' err' : '');
+    status.textContent = text;
+    percent.textContent = pct === null ? '' : pct + '%';
+    if (pct !== null) fill.style.width = pct + '%';
+  }
+  function fail(text) {
+    show(text, null, true);
+    button.disabled = false;
+    input.disabled = false;
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var total = 0;
+    for (var i = 0; i < input.files.length; i++) total += input.files[i].size;
+    if (!input.files.length) return;
+    if (total > MAX_BYTES) {
+      fail('所选文件共 ' + size(total) + '，超过单次上传上限 ' + size(MAX_BYTES) + '。请分批上传。');
+      return;
+    }
+    var data = new FormData(form);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action);
+    xhr.upload.addEventListener('progress', function (e) {
+      if (!e.lengthComputable) return;
+      var pct = Math.min(99, Math.floor(e.loaded / e.total * 100));
+      show('正在上传 ' + size(e.loaded) + ' / ' + size(e.total), pct, false);
+    });
+    xhr.upload.addEventListener('load', function () {
+      show('已发送，等待服务器保存…', 99, false);
+    });
+    xhr.addEventListener('load', function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        show('上传完成', 100, false);
+        window.location.href = xhr.responseURL || window.location.href;
+      } else if (xhr.status === 413) {
+        fail('文件太大，服务器拒绝了这次上传。');
+      } else {
+        fail('上传失败（错误 ' + xhr.status + '）。请重试。');
+      }
+    });
+    xhr.addEventListener('error', function () { fail('上传失败：连接中断。请检查网络后重试。'); });
+    xhr.addEventListener('abort', function () { fail('上传已取消。'); });
+    button.disabled = true;
+    show('正在上传 0B / ' + size(total), 0, false);
+    xhr.send(data);
+    input.disabled = true;
+  });
+})();
 </script>"""
 
 UPLOAD_TEMPLATE = """<!DOCTYPE html>
@@ -183,12 +314,16 @@ UPLOAD_TEMPLATE = """<!DOCTYPE html>
   </div>
   <div class="panel">
     <h2>上传文件</h2>
-    <form method="post" action="/upload" enctype="multipart/form-data">
+    <form method="post" action="/upload" enctype="multipart/form-data" id="upload-form">
       <input type="hidden" name="folder" value="{folder_attr}">
-      <label>选择一个或多个文件</label>
-      <input type="file" name="files" multiple required>
-      <button type="submit">上传</button>
+      <label for="upload-files">选择一个或多个文件</label>
+      <input type="file" id="upload-files" name="files" multiple required>
+      <button type="submit" id="upload-button">上传</button>
     </form>
+    <div class="progress" id="upload-progress" hidden>
+      <div class="progress-track"><div class="progress-fill" id="upload-fill"></div></div>
+      <div class="progress-text"><span id="upload-status"></span><span id="upload-percent"></span></div>
+    </div>
   </div>
   <div class="panel">
     <h2>新建文件夹</h2>
@@ -201,6 +336,7 @@ UPLOAD_TEMPLATE = """<!DOCTYPE html>
   </div>
 </div>
 {script}
+{upload_script}
 </body>
 </html>"""
 
@@ -286,7 +422,13 @@ class ShareHandler(SimpleHTTPRequestHandler):
         rel = os.path.relpath(path, self.directory)
         rel = "" if rel == "." else rel
         host = self.headers.get("Host", f"localhost:{PORT}")
-        if rel:
+        authed = self.is_authed()
+        # The top level is not listed for visitors: they can only open a folder or
+        # file whose exact link they were given. The logged-in owner still sees it.
+        if not rel and not authed:
+            return self._respond_html(PRIVATE_ROOT_TEMPLATE.format(style=PAGE_STYLE))
+        # Same reason: no "up" link out of a top-level folder for visitors.
+        if rel and (authed or "/" in rel.replace(os.sep, "/")):
             rows.append('    <tr class="parent"><td colspan="4">⬆ <a href="../">上一级目录</a></td></tr>')
 
         for name in names:
@@ -323,7 +465,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
         # Visitors never see the management link. It appears only for a browser that
         # has already logged in at /upload (it then sends the login with each request).
         manage_link = ""
-        if self.is_authed():
+        if authed:
             manage_link = (
                 f'<a class="upload-link" href="/upload?folder={urllib.parse.quote(rel)}">'
                 "🛠 管理文件（上传 / 改名 / 删除）</a>"
@@ -353,6 +495,62 @@ class ShareHandler(SimpleHTTPRequestHandler):
         expected = "Basic " + base64.b64encode(f"{UPLOAD_USER}:{UPLOAD_PASS}".encode()).decode()
         return self.headers.get("Authorization") == expected
 
+    def view_token(self):
+        # Changes whenever either password changes, which signs everyone out.
+        return hashlib.sha256(f"fileshare-view:{VIEW_PASS}:{UPLOAD_PASS}".encode()).hexdigest()
+
+    def can_view(self):
+        """True if no viewing password is set, or this request carries the viewing
+        cookie, or it is the logged-in owner."""
+        if not VIEW_PASS or self.is_authed():
+            return True
+        for part in self.headers.get("Cookie", "").split(";"):
+            key, _, value = part.strip().partition("=")
+            if key == VIEW_COOKIE and hmac.compare_digest(value, self.view_token()):
+                return True
+        return False
+
+    @staticmethod
+    def safe_next(target):
+        """Only ever redirect back into this site."""
+        if target.startswith("/") and not target.startswith("//") and "\\" not in target:
+            return target
+        return "/"
+
+    def serve_login_page(self, next_path, failed=False, status=200):
+        body = LOGIN_TEMPLATE.format(
+            style=PAGE_STYLE,
+            message='<div class="msg err">密码不正确，请重试。</div>' if failed else "",
+            next_attr=html.escape(self.safe_next(next_path), quote=True),
+        ).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+    def handle_login(self):
+        length = int(self.headers.get("Content-Length", 0))
+        if length < 0 or length > 4096:
+            self.send_error(400, "Bad Request")
+            return
+        data = urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8", "replace"))
+        next_path = self.safe_next(data.get("next", ["/"])[0])
+        password = data.get("password", [""])[0]
+        if not VIEW_PASS or not hmac.compare_digest(password.encode(), VIEW_PASS.encode()):
+            self.serve_login_page(next_path, failed=bool(VIEW_PASS), status=200 if not VIEW_PASS else 403)
+            return
+        self.send_response(303)
+        self.send_header("Location", next_path)
+        self.send_header(
+            "Set-Cookie",
+            f"{VIEW_COOKIE}={self.view_token()}; Max-Age={VIEW_COOKIE_DAYS * 86400}; Path=/; HttpOnly; SameSite=Lax",
+        )
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def check_auth(self):
         if self.is_authed():
             return True
@@ -374,6 +572,15 @@ class ShareHandler(SimpleHTTPRequestHandler):
                 return
             self.serve_upload_page(parsed)
             return
+        if parsed.path == "/login":
+            if self.can_view():
+                self._redirect(self.safe_next(urllib.parse.parse_qs(parsed.query).get("next", ["/"])[0]))
+            else:
+                self.serve_login_page(urllib.parse.parse_qs(parsed.query).get("next", ["/"])[0])
+            return
+        if not self.can_view():
+            self._redirect("/login?next=" + urllib.parse.quote(self.path, safe=""))
+            return
         # ?dl=1 on a file: send it as an attachment so the browser saves it
         # instead of opening it (the listing's download button uses this).
         self._attachment = None
@@ -390,8 +597,17 @@ class ShareHandler(SimpleHTTPRequestHandler):
             self._attachment = None
         super().end_headers()
 
+    def do_HEAD(self):
+        if not self.can_view():
+            self.send_error(403, "Forbidden")
+            return
+        super().do_HEAD()
+
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/login":
+            self.handle_login()
+            return
         if not self.check_auth():
             return
         if parsed.path == "/upload":
@@ -418,6 +634,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
         body = UPLOAD_TEMPLATE.format(
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
+            upload_script=UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
             folder_display=html.escape(folder) if folder else "",
             folder_href=urllib.parse.quote(folder) + ("/" if folder else ""),
             folder_attr=html.escape(folder),
@@ -583,7 +800,7 @@ def main():
         raise SystemExit("UPLOAD_PASS environment variable must be set")
     handler = partial(ShareHandler, directory=SHARE_DIR)
     server = ThreadingHTTPServer(("0.0.0.0", PORT), handler)
-    print(f"Serving {SHARE_DIR} on port {PORT}; upload user={UPLOAD_USER}")
+    print(f"Serving {SHARE_DIR} on port {PORT}; upload user={UPLOAD_USER}; viewing password {'on' if VIEW_PASS else 'off'}")
     server.serve_forever()
 
 

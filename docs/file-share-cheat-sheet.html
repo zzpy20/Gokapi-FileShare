@@ -193,9 +193,11 @@
   <section>
     <h2>The link</h2>
     <div class="panel link-box">
-      <span class="url">&lt;SERVER_IP&gt;:8080/</span>
-      <span class="note">unchanged — nothing to resend</span>
+      <span class="url">&lt;SERVER_IP&gt;:8080/&lt;folder&gt;/</span>
+      <span class="note">send a folder's or file's own link</span>
     </div>
+    <p class="lede" style="margin-top:14px; font-size:0.92rem;">The bare address <code>&lt;SERVER_IP&gt;:8080/</code> shows visitors nothing — the top level is not listed. People can only open a folder or file whose exact link you gave them, so a folder's name is its key: use one that is hard to guess. Anyone holding a folder's link sees everything inside it, including its subfolders.</p>
+    <p class="lede" style="margin-top:10px; font-size:0.92rem;"><strong>Viewing password:</strong> every visitor is asked for one shared password before anything opens, then stays signed in on that device for 30 days. Send it along with the link. It is saved on your Mac as <code>SZ_FILESHARE_VIEW_PASS</code> in the repo's <code>.env</code>, and set on the server as <code>VIEW_PASS</code> in <code>~/fileshare/docker-compose.yml</code> — change it there, then run <code>docker compose up -d</code> in that folder. Remove the line to turn the password off.</p>
   </section>
 
   <section>

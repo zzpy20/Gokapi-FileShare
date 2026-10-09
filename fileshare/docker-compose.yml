@@ -10,3 +10,4 @@ services:
     environment:
       - UPLOAD_USER=${UPLOAD_USER}
       - UPLOAD_PASS=${UPLOAD_PASS}
+      - VIEW_PASS=${VIEW_PASS:-}
