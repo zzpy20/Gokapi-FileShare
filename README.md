@@ -48,6 +48,18 @@ The Shenzhen deployment serves a mainland Chinese audience, so its public downlo
 
 Gokapi caches `custom/public.js` for 2 days, so after editing it on the server, bump `custom/version.txt` (a plain integer, e.g. `echo 2 > version.txt`) and restart the container — this changes the script's URL and forces every client to fetch the new version instead of a stale cached copy.
 
+#### Deleting every Gokapi file at once
+
+Gokapi's admin page only has a per-file delete button. [`gokapi/clear-all.sh`](gokapi/clear-all.sh) clears a whole box in one go through Gokapi's API — run it from your Mac, from the repo root:
+
+```bash
+bash gokapi/clear-all.sh sg      # Singapore box
+bash gokapi/clear-all.sh sz      # Shenzhen box
+bash gokapi/clear-all.sh sg -y   # skip the confirmation question
+```
+
+It lists every stored file, asks you to type `yes`, deletes them all (every share link stops working — there is no undo), then reports how many are left. It reads `SG_GOKAPI_URL` + `SG_GOKAPI_API_KEY` (or the `SZ_` pair) from the gitignored `.env` at the repo root; create the key in the admin page's API Keys menu with permission to view and delete files. Requires `curl` and `jq`.
+
 ### Docs
 
 Four reference pages, published as standalone HTML (also mirrored in [`docs/`](docs/) here — English only, regardless of which repo language section you're reading):
@@ -110,6 +122,18 @@ docker compose up -d --build
 深圳部署面向中国大陆用户，因此其公开下载页 / 密码验证页通过 [`gokapi/custom/public.js`](gokapi/custom/public.js) 翻译成简体中文——这是 Gokapi 官方支持的免重新构建自定义方式（只要在 `/app/custom` 下挂载一个 `custom/public.js`，Gokapi 会自动加载它，`docker-compose.china.yml` 里已经配好了这个挂载）。同时把 `PublicName` 配置项改成了「深圳文件快传」而不是英文名称。这个改动只作用于这一台服务器——用本仓库部署的其他服务器默认仍是英文界面，除非你把 `custom/public.js` 复制过去并按同样方式挂载。
 
 Gokapi 会把 `custom/public.js` 缓存 2 天，所以在服务器上改完这个文件后，需要把 `custom/version.txt`（一个纯数字，比如执行 `echo 2 > version.txt`）加一并重启容器——这会让脚本的 URL 发生变化，逼所有客户端重新拉取新版本，而不是继续用缓存里的旧版本。
+
+#### 一次删除 Gokapi 的全部文件
+
+Gokapi 的管理页面只有逐个文件的删除按钮。[`gokapi/clear-all.sh`](gokapi/clear-all.sh) 通过 Gokapi 的 API 一次清空整台机器——在 Mac 上、从仓库根目录运行：
+
+```bash
+bash gokapi/clear-all.sh sg      # 新加坡服务器
+bash gokapi/clear-all.sh sz      # 深圳服务器
+bash gokapi/clear-all.sh sg -y   # 跳过确认提问
+```
+
+它会先列出所有已存文件，要求你输入 `yes`，然后全部删除（所有分享链接随之失效——无法撤销），最后报告还剩多少个文件。它从仓库根目录下被 gitignore 排除的 `.env` 里读取 `SG_GOKAPI_URL` + `SG_GOKAPI_API_KEY`（或 `SZ_` 那一对）；API key 在管理页面的 API Keys 菜单里创建，需要有查看和删除文件的权限。依赖 `curl` 和 `jq`。
 
 ### 文档
 
