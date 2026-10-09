@@ -116,7 +116,7 @@ LIST_TEMPLATE = """<!DOCTYPE html>
 <div class="wrap">
   <div class="topbar">
     <h1>📁 文件分享</h1>
-    <a class="upload-link" href="/upload?folder={folder_q}">🛠 管理文件（上传 / 改名 / 删除）</a>
+    {manage_link}
   </div>
   <table>
     <thead><tr><th>文件名</th><th>大小</th><th class="mtime">修改时间</th><th></th></tr></thead>
@@ -320,12 +320,20 @@ class ShareHandler(SimpleHTTPRequestHandler):
             )
 
         count = len(rows) - (1 if rel else 0)
+        # Visitors never see the management link. It appears only for a browser that
+        # has already logged in at /upload (it then sends the login with each request).
+        manage_link = ""
+        if self.is_authed():
+            manage_link = (
+                f'<a class="upload-link" href="/upload?folder={urllib.parse.quote(rel)}">'
+                "🛠 管理文件（上传 / 改名 / 删除）</a>"
+            )
         title = urllib.parse.unquote(self.path) or "/"
         body = LIST_TEMPLATE.format(
             title=html.escape(title),
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
-            folder_q=urllib.parse.quote(rel),
+            manage_link=manage_link,
             rows="\n".join(rows) if rows else '    <tr><td colspan="4" class="empty">暂无文件</td></tr>',
             count=count,
         )
@@ -341,9 +349,12 @@ class ShareHandler(SimpleHTTPRequestHandler):
 
     # ---------- auth ----------
 
-    def check_auth(self):
+    def is_authed(self):
         expected = "Basic " + base64.b64encode(f"{UPLOAD_USER}:{UPLOAD_PASS}".encode()).decode()
-        if self.headers.get("Authorization") == expected:
+        return self.headers.get("Authorization") == expected
+
+    def check_auth(self):
+        if self.is_authed():
             return True
         body = "<h1>需要登录才能上传</h1>".encode("utf-8")
         self.send_response(401)

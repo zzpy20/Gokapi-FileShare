@@ -11,7 +11,7 @@ Deliberately reachable by bare IP, not a domain — mainland China requires ICP 
 
 | App | Port | What it's for | Source |
 |---|---|---|---|
-| [`fileshare/`](fileshare/) | 8080 | Browsable directory listing + password-gated management page (upload / rename / delete / copy-link) | Custom Python (stdlib only) |
+| [`fileshare/`](fileshare/) | 8080 | Browsable directory listing — each row has a copy-direct-link button and, for files, a download button; clicking a name opens the file in the browser — plus a password-gated management page (upload / rename / delete / copy-link). Layout adapts from phones up to 1120px wide | Custom Python (stdlib only) |
 | [`gokapi/`](gokapi/) | 9001 | Expiring links with a real admin UI, encrypted at rest | [Gokapi](https://github.com/Forceu/Gokapi) |
 
 `fileshare` replaced [Filebrowser](https://github.com/filebrowser/filebrowser), then [Alist](https://github.com/AlistGo/alist) — Filebrowser archives 2026-09-01 with no further releases, and Alist ended up being more than this needed. `gokapi` was added afterward to cover one-off private links with real expiry, a role a since-removed companion app (`quickshare-sz`) used to fill.

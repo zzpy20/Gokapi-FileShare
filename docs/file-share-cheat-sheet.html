@@ -199,6 +199,16 @@
   </section>
 
   <section>
+    <h2>What a visitor sees</h2>
+    <ul class="facts">
+      <li>Clicking a file's <strong>name</strong> opens it in the browser. That address is the file's direct link.</li>
+      <li><strong>🔗 复制链接</strong> on each row copies that direct link — paste it to someone and they open the file (or folder) in one click, without browsing the listing.</li>
+      <li><strong>⬇ 下载</strong> on each file row saves the file instead of opening it.</li>
+      <li>The page fits a phone (the two buttons shrink to their icons and the date column is hidden) and widens to 1120px on a large screen.</li>
+    </ul>
+  </section>
+
+  <section>
     <h2>Add or remove a file</h2>
     <div class="panel">
       <div class="cmd-row">
@@ -216,7 +226,7 @@
     <h2>Upload from a browser</h2>
     <div class="panel">
       <div class="cmd-row">
-        <span class="what">Upload page (password-protected — browser will prompt once and remember it):</span>
+        <span class="what">Upload page — type or bookmark this address (password-protected — browser will prompt once and remember it):</span>
         <pre>&lt;SERVER_IP&gt;:8080/upload</pre>
       </div>
       <div class="cmd-row">
@@ -226,7 +236,7 @@ in the gitignored .env at the root of the Gokapi-FileShare repo</pre>
         <span class="what">On the server they are set as UPLOAD_USER / UPLOAD_PASS in ~/fileshare/docker-compose.yml.</span>
       </div>
     </div>
-    <p class="lede" style="margin-top:14px; font-size:0.92rem;">Lets you upload, rename, delete, and copy a share link for anything — files and folders — without SSH. Every folder listing has a "🛠 管理文件（上传 / 改名 / 删除）" link in the corner that opens this page pre-scoped to that folder.</p>
+    <p class="lede" style="margin-top:14px; font-size:0.92rem;">Lets you upload, rename, and delete anything — files and folders — without SSH. It has the same copy-link button as the public listing. Visitors never see a link to this page. Once you have logged in here, your own browser shows a "🛠 管理文件（上传 / 改名 / 删除）" link in the corner of every folder listing, opening this page pre-scoped to that folder — it disappears again when the browser forgets the login (usually when you quit it).</p>
   </section>
 
   <section>

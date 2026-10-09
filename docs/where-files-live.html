@@ -251,10 +251,10 @@
       <dd><code>~/fileshare/shared/</code> — real filenames, real subfolders, exactly as they sit on disk.</dd>
 
       <dt>Add a file</dt>
-      <dd><pre>scp yourfile.pdf sz:~/fileshare/shared/</pre>or drag-and-drop at the password-gated management page (the "🛠 管理文件" link on every listing).</dd>
+      <dd><pre>scp yourfile.pdf sz:~/fileshare/shared/</pre>or drag-and-drop at the password-gated management page, <code>http://&lt;ip&gt;:8080/upload</code>. Visitors see no link to it; after you log in there, your own browser shows a "🛠 管理文件" link on every listing.</dd>
 
       <dt>Rename / delete / copy link</dt>
-      <dd>All three are on that same management page now — no SSH needed for day-to-day use. Each row also has a one-click share-link copy button, for files and folders alike.</dd>
+      <dd>Rename and delete are on that same management page — no SSH needed for day-to-day use. The one-click copy-link button is on every row of both the management page and the public listing, for files and folders alike; the public listing also has a download button per file.</dd>
 
       <dt>Remove a file (SSH)</dt>
       <dd><pre>ssh sz 'rm ~/fileshare/shared/"yourfile.pdf"'</pre></dd>

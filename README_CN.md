@@ -11,7 +11,7 @@
 
 | 应用 | 端口 | 用途 | 源码 |
 |---|---|---|---|
-| [`fileshare/`](fileshare/) | 8080 | 可浏览目录列表 + 密码保护的管理页面（上传 / 改名 / 删除 / 复制链接） | 自定义 Python（仅标准库） |
+| [`fileshare/`](fileshare/) | 8080 | 可浏览目录列表——每一行都有「复制直达链接」按钮，文件还有「下载」按钮；点文件名则直接在浏览器里打开——外加密码保护的管理页面（上传 / 改名 / 删除 / 复制链接）。页面宽度自适应，从手机到最宽 1120px | 自定义 Python（仅标准库） |
 | [`gokapi/`](gokapi/) | 9001 | 带真正管理界面、静态加密的到期链接 | [Gokapi](https://github.com/Forceu/Gokapi) |
 
 `fileshare` 先后替代了 [Filebrowser](https://github.com/filebrowser/filebrowser) 和 [Alist](https://github.com/AlistGo/alist)——Filebrowser 将于 2026-09-01 归档、不再有后续发布，而 Alist 的功能则超出了实际需求。`gokapi` 是之后加入的，用来覆盖一次性私密链接、带真正到期机制的场景——这个角色以前由已下线的伴生应用 `quickshare-sz` 承担。
