@@ -298,7 +298,7 @@
     <div class="fork-branch">
       <span class="tag">If this is</span>
       <span class="verdict">A brand-new ECS instance</span>
-      <p>What's happened before (e.g. the sing-box rebuild after an IP ban) — neither app exists on the new box yet. Follow <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a> first, then come back here for step 3 only.</p>
+      <p>What's happened before (e.g. the sing-box rebuild after an IP ban) — neither app exists on the new box yet. Follow <a href="https://claude.ai/code/artifact/0375cdf1-bd99-4319-a3db-c5ff5ffdd205">Part 3: New Box, Same Stack</a> first, then come back here for steps 3 and 5 only.</p>
     </div>
   </div>
 
@@ -347,6 +347,18 @@
         <div class="link-row"><span class="who">Expiring links</span><span class="url">http://<span class="ph">NEW_IP</span>:9001/admin</span></div>
       </div>
       <p class="note">Individual Gokapi file links need regenerating from its admin page — the id/filename stays the same, only the host part changed.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head">
+        <h2>Update the saved addresses on your Mac</h2>
+        <span class="run-on">Gokapi-FileShare/.env</span>
+      </div>
+      <p>The gitignored <code>.env</code> at the root of your local repo holds every login plus each app's address. Change the IP in these three lines:</p>
+      <pre>SZ_FILESHARE_URL=http://NEW_IP:8080/
+SZ_FILESHARE_UPLOAD_URL=http://NEW_IP:8080/upload
+SZ_GOKAPI_URL=http://NEW_IP:9001/admin</pre>
+      <p class="note"><code>gokapi/clear-all.sh sz</code> reads <code>SZ_GOKAPI_URL</code> — leave the old IP there and it will talk to the dead box. The passwords and API key in that file don't change.</p>
     </div>
 
   </div>

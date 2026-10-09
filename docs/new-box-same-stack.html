@@ -420,7 +420,7 @@ sudo systemctl enable --now docker</pre>
           <pre>cd ~/Gokapi-FileShare/fileshare
 cp .env.example .env
 nano .env</pre>
-          <p>Change <code>UPLOAD_USER</code> and <code>UPLOAD_PASS</code> to real values, then save (in <code>nano</code>: <code>Ctrl+O</code>, Enter, <code>Ctrl+X</code>).</p>
+          <p>Change <code>UPLOAD_USER</code> and <code>UPLOAD_PASS</code> to real values, then save (in <code>nano</code>: <code>Ctrl+O</code>, Enter, <code>Ctrl+X</code>). Record the same two values in the gitignored <code>.env</code> at the root of the repo on your Mac — that file is the master copy of every password.</p>
         </div>
         <div class="step">
           <div class="step-head">
@@ -488,7 +488,7 @@ Use SSL:             No
 Log IP on download:  No
 Include filename:    Yes
 Encryption Level:    Level 1 - Local encryption / Key locally</pre>
-          <p>On the Credentials screen, set a real admin username and password — this is the login you'll use at <code>/admin</code> from now on.</p>
+          <p>On the Credentials screen, set a real admin username and password — this is the login you'll use at <code>/admin</code> from now on. Save it in the <code>.env</code> on your Mac straight away: Gokapi keeps only a hash, so a forgotten password can't be read back, only reset (<code>gokapi --deployment-password &lt;new&gt;</code> with the container stopped).</p>
         </div>
 
         <div class="step">
@@ -497,7 +497,7 @@ Encryption Level:    Level 1 - Local encryption / Key locally</pre>
             <span class="run-on">from any computer</span>
           </div>
           <pre>curl -I http://&lt;new box's IP&gt;:9001/</pre>
-          <div class="expect">Expect <strong>HTTP/1.1 200</strong>. If it hangs or times out, double-check the previous port step — that's almost always the culprit at this stage.</div>
+          <div class="expect">Expect <strong>HTTP/1.1 200</strong>. If it hangs or times out, double-check the previous port step — that's almost always the culprit at this stage. In a browser this bare address redirects to Gokapi's GitHub page on purpose; the login is at <code>/admin</code>.</div>
         </div>
       </div>
     </div>
