@@ -154,7 +154,21 @@ PAGE_STYLE = """
   td.name a { color:var(--ink); text-decoration:none; }
   td.name a:hover { color:var(--accent); text-decoration:underline; }
   .icon { margin-right:8px; }
-  .thumb { width:40px; height:40px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:10px; background:var(--accent-soft); }
+  .thumb { width:76px; height:76px; object-fit:cover; border-radius:6px; vertical-align:middle; margin-right:14px; background:var(--accent-soft); }
+  a.lb { cursor:zoom-in; }
+  /* Image viewer: deliberately dark in both themes, like a photo viewer. */
+  .lb-overlay { position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; background:rgba(8,12,14,.94); color:#e8eeec; }
+  .lb-top { display:flex; align-items:center; gap:10px; padding:12px 14px; font-size:.9rem; }
+  .lb-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lb-count { color:#a3b1b0; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .lb-btn { background:rgba(255,255,255,.14); color:#fff; border:none; border-radius:6px; padding:8px 12px; font-size:.88rem; font-family:inherit; line-height:1.2; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .lb-btn:hover { background:rgba(255,255,255,.24); }
+  .lb-btn:focus-visible { outline:2px solid #59c4c0; outline-offset:2px; }
+  .lb-stage { position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:0 12px 18px; }
+  .lb-stage img { max-width:100%; max-height:100%; object-fit:contain; border-radius:4px; }
+  .lb-nav { position:absolute; top:50%; transform:translateY(-50%); width:46px; height:76px; padding:0; font-size:1.7rem; }
+  .lb-prev { left:10px; }
+  .lb-next { right:10px; }
   .meta { display:block; font-size:.78rem; font-weight:400; color:var(--muted); margin-top:3px; }
   .empty { text-align:center; color:var(--muted); padding:32px 16px; }
   footer { text-align:center; color:var(--muted); font-size:.8rem; margin-top:20px; }
@@ -211,9 +225,10 @@ PAGE_STYLE = """
   .item { padding:14px 0; border-top:1px solid var(--line); }
   .item:last-child { padding-bottom:0; }
   .item-head { display:flex; align-items:center; gap:12px; }
-  .item-icon { flex:none; width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+  .item-icon { flex:none; width:56px; height:56px; display:flex; align-items:center; justify-content:center;
     font-size:1.25rem; background:var(--paper); border-radius:6px; overflow:hidden; }
-  .item-icon img { width:40px; height:40px; object-fit:cover; }
+  .item-icon a { display:block; width:100%; height:100%; }
+  .item-icon img { width:56px; height:56px; object-fit:cover; display:block; }
   .item-title { flex:1; min-width:0; }
   .item-name { font-weight:600; font-size:.95rem; color:var(--ink); text-decoration:none; overflow-wrap:anywhere; }
   a.item-name:hover { color:var(--accent); text-decoration:underline; }
@@ -223,7 +238,7 @@ PAGE_STYLE = """
   .item-actions { display:flex; gap:8px; flex:none; }
   .item-actions form { margin:0; }
   .item-fields { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px 20px;
-    margin:14px 0 2px 52px; padding:16px 18px; background:var(--paper); border-radius:8px; }
+    margin:14px 0 2px 68px; padding:16px 18px; background:var(--paper); border-radius:8px; }
   .item-fields form { margin:0; }
   .progress { margin-top:14px; }
   .progress-track { height:10px; background:var(--accent-soft); border-radius:5px; overflow:hidden; }
@@ -236,9 +251,11 @@ PAGE_STYLE = """
   }
   @media (max-width:640px) {
     .panel { padding:16px 14px; }
-    .thumb { width:34px; height:34px; margin-right:8px; }
+    .thumb { width:56px; height:56px; margin-right:10px; }
+    .lb-nav { width:38px; height:60px; font-size:1.4rem; }
+    .lb-btn .lbl { display:none; }
     .item-head { flex-wrap:wrap; }
-    .item-actions { width:100%; padding-left:52px; flex-wrap:wrap; }
+    .item-actions { width:100%; padding-left:68px; flex-wrap:wrap; }
     .item-fields { margin-left:0; padding:14px; grid-template-columns:minmax(0,1fr); }
   }
   a.btn-mini { display:inline-block; text-decoration:none; }
@@ -268,6 +285,7 @@ LIST_TEMPLATE = """<!DOCTYPE html>
   <footer>共 {count} 项{expiry_note}</footer>
 </div>
 {script}
+{lightbox}
 </body>
 </html>"""
 
@@ -314,6 +332,113 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
 </div>
 </body>
 </html>"""
+
+# In-page image viewer for the listing: click an image to open it, then flip
+# through the folder's images with the buttons, arrow keys or a swipe.
+LIGHTBOX_SCRIPT = """<script>
+(function () {
+  var anchors = [].slice.call(document.querySelectorAll('a.lb'));
+  if (!anchors.length) return;
+  var items = [], indexByHref = {};
+  anchors.forEach(function (a) {
+    var href = a.getAttribute('href');
+    if (!(href in indexByHref)) { indexByHref[href] = items.length; items.push({ href: href, name: '' }); }
+    var text = a.textContent.trim();
+    if (text) items[indexByHref[href]].name = text;
+  });
+
+  var overlay, img, nameEl, countEl, downloadEl, closeBtn, current = 0, lastFocus = null, touchX = null;
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text) node.textContent = text;
+    return node;
+  }
+  function build() {
+    overlay = el('div', 'lb-overlay');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '图片查看');
+    var top = el('div', 'lb-top');
+    nameEl = el('span', 'lb-name');
+    countEl = el('span', 'lb-count');
+    downloadEl = el('a', 'lb-btn');
+    downloadEl.innerHTML = '⬇<span class="lbl"> 下载</span>';
+    downloadEl.setAttribute('download', '');
+    closeBtn = el('button', 'lb-btn');
+    closeBtn.type = 'button';
+    closeBtn.innerHTML = '✕<span class="lbl"> 关闭</span>';
+    closeBtn.setAttribute('aria-label', '关闭');
+    closeBtn.addEventListener('click', close);
+    top.appendChild(nameEl); top.appendChild(countEl); top.appendChild(downloadEl); top.appendChild(closeBtn);
+    var stage = el('div', 'lb-stage');
+    img = el('img');
+    img.alt = '';
+    stage.appendChild(img);
+    if (items.length > 1) {
+      var prev = el('button', 'lb-btn lb-nav lb-prev', '‹');
+      prev.type = 'button'; prev.setAttribute('aria-label', '上一张');
+      prev.addEventListener('click', function (e) { e.stopPropagation(); show(current - 1); });
+      var next = el('button', 'lb-btn lb-nav lb-next', '›');
+      next.type = 'button'; next.setAttribute('aria-label', '下一张');
+      next.addEventListener('click', function (e) { e.stopPropagation(); show(current + 1); });
+      stage.appendChild(prev); stage.appendChild(next);
+    }
+    // Clicking the dark area around the picture closes the viewer.
+    stage.addEventListener('click', function (e) { if (e.target === stage) close(); });
+    stage.addEventListener('touchstart', function (e) { touchX = e.changedTouches[0].clientX; }, { passive: true });
+    stage.addEventListener('touchend', function (e) {
+      if (touchX === null) return;
+      var dx = e.changedTouches[0].clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    overlay.appendChild(top); overlay.appendChild(stage);
+    document.body.appendChild(overlay);
+  }
+  function show(i) {
+    current = (i + items.length) % items.length;
+    var item = items[current];
+    img.src = item.href;
+    nameEl.textContent = item.name;
+    countEl.textContent = (current + 1) + ' / ' + items.length;
+    downloadEl.href = item.href + '?dl=1';
+    // Fetch the neighbours ahead of time so flipping feels instant.
+    [current + 1, current - 1].forEach(function (n) {
+      if (items.length > 1) new Image().src = items[(n + items.length) % items.length].href;
+    });
+  }
+  function open(i) {
+    if (!overlay) build();
+    lastFocus = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    show(i);
+    closeBtn.focus();
+  }
+  function close() {
+    overlay.hidden = true;
+    img.removeAttribute('src');
+    document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  anchors.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      // Leave ctrl/cmd/shift/middle clicks alone so "open in new tab" still works.
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      open(indexByHref[a.getAttribute('href')]);
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!overlay || overlay.hidden) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowLeft') show(current - 1);
+    else if (e.key === 'ArrowRight') show(current + 1);
+  });
+})();
+</script>"""
 
 COPY_SCRIPT = """<script>
 function copyLink(url, btn) {
@@ -636,11 +761,19 @@ class ShareHandler(SimpleHTTPRequestHandler):
                     f'⬇<span class="lbl"> 下载</span></a>'
                 )
             icon_html = f'<span class="icon">{icon}</span>'
-            if not is_dir and ext in THUMB_EXTS and os.path.getsize(full) <= THUMB_MAX_BYTES:
-                icon_html = f'<img class="thumb" src="{link}" alt="" loading="lazy">'
+            name_attrs = ""
+            if not is_dir and ext in THUMB_EXTS:
+                # Images open in the in-page viewer; without JavaScript the links
+                # still open the file itself.
+                name_attrs = ' class="lb"'
+                if os.path.getsize(full) <= THUMB_MAX_BYTES:
+                    icon_html = (
+                        f'<a class="lb" href="{link}" tabindex="-1" aria-hidden="true">'
+                        f'<img class="thumb" src="{link}" alt="" loading="lazy"></a>'
+                    )
             rows.append(
                 f'    <tr><td class="name">{icon_html}'
-                f'<a href="{link}">{html.escape(display)}</a></td>'
+                f'<a{name_attrs} href="{link}">{html.escape(display)}</a></td>'
                 f'<td class="size">{size_str}</td><td class="mtime">{mtime}</td>'
                 f'<td class="dl">{dl_cell}</td></tr>'
             )
@@ -665,6 +798,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             script=COPY_SCRIPT,
             manage_link=manage_link,
             expiry_note=expiry_note,
+            lightbox=LIGHTBOX_SCRIPT,
             rows="\n".join(rows) if rows else '    <tr><td colspan="4" class="empty">暂无文件</td></tr>',
             count=count,
         )
@@ -913,7 +1047,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
         body = UPLOAD_TEMPLATE.format(
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
-            upload_script=MANAGE_SCRIPT + "\n" + UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
+            upload_script=LIGHTBOX_SCRIPT + "\n" + MANAGE_SCRIPT + "\n" + UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
             crumbs=self._crumbs(folder),
             folder_href=urllib.parse.quote(folder) + ("/" if folder else ""),
             folder_attr=html.escape(folder),
@@ -968,8 +1102,12 @@ class ShareHandler(SimpleHTTPRequestHandler):
             mtime = datetime.fromtimestamp(os.path.getmtime(full)).strftime("%Y-%m-%d %H:%M")
 
             icon = "📁" if is_dir else ICONS.get(ext, "📄")
-            if not is_dir and ext in THUMB_EXTS and os.path.getsize(full) <= THUMB_MAX_BYTES:
-                icon = f'<img src="/{sub_q}" alt="" loading="lazy">'
+            is_image = not is_dir and ext in THUMB_EXTS
+            if is_image and os.path.getsize(full) <= THUMB_MAX_BYTES:
+                icon = (
+                    f'<a class="lb" href="/{sub_q}" tabindex="-1" aria-hidden="true">'
+                    f'<img src="/{sub_q}" alt="" loading="lazy"></a>'
+                )
             if is_dir:
                 try:
                     inside = len([n for n in os.listdir(full) if not n.startswith(".")])
@@ -978,7 +1116,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
                 title = f'<a class="item-name" href="/upload?folder={sub_q}">{name_esc}</a>'
                 meta = [f"文件夹 · {inside} 项", f"修改于 {mtime}"]
             else:
-                title = f'<span class="item-name">{name_esc}</span>'
+                if is_image:
+                    title = f'<a class="item-name lb" href="/{sub_q}">{name_esc}</a>'
+                else:
+                    title = f'<span class="item-name">{name_esc}</span>'
                 meta = [human_size(os.path.getsize(full)), f"修改于 {mtime}"]
             meta_html = "".join(f"<span>{m}</span>" for m in meta)
 
