@@ -245,7 +245,7 @@
       <h2>fileshare</h2>
       <span class="port-tag">:8080</span>
     </div>
-    <p class="app-sub">Browsable folders. Visitors get no top-level listing — they can only open a folder or file whose exact link they were given, plus everything inside that folder. A shared viewing password is asked for first (saved as <code>SZ_FILESHARE_VIEW_PASS</code> in your local <code>.env</code>).</p>
+    <p class="app-sub">Browsable folders. Visitors get no top-level listing — they can only open a folder or file whose exact link they were given, plus everything inside that folder. A password is asked for first: the folder's own if you set one on the management page, otherwise the shared one (saved as <code>SZ_FILESHARE_VIEW_PASS</code> in your local <code>.env</code>).</p>
     <dl class="fact-grid">
       <dt>Host path</dt>
       <dd><code>~/fileshare/shared/</code> — real filenames, real subfolders, exactly as they sit on disk.</dd>
@@ -263,7 +263,7 @@
       <dd><pre>ssh sz 'ls -la ~/fileshare/shared/'</pre></dd>
 
       <dt>Retention</dt>
-      <dd>Forever, until you delete it by hand — no expiry feature exists here.</dd>
+      <dd>Forever, until you delete it by hand — unless you set an expiry on a top-level folder (⏳ 设到期 on the management page), in which case that folder and everything in it is deleted automatically when the days are up.</dd>
 
       <dt>Currently</dt>
       <dd class="stat muted">Empty — cleared 2026-10-10</dd>

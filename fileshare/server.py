@@ -9,6 +9,8 @@ import html
 import io
 import os
 import shutil
+import threading
+import time
 import urllib.parse
 from datetime import datetime
 from functools import partial
@@ -23,6 +25,100 @@ UPLOAD_PASS = os.environ.get("UPLOAD_PASS", "")
 VIEW_PASS = os.environ.get("VIEW_PASS", "")
 VIEW_COOKIE = "fileshare_view"
 VIEW_COOKIE_DAYS = 30
+# A top-level folder can carry its own viewing password in this file inside it
+# (set from the management page). It replaces VIEW_PASS for that folder.
+FOLDER_PASS_FILE = ".fileshare-password"
+# A top-level folder can also carry an expiry time (Unix seconds) in this file.
+# Once it has passed, the folder and everything in it is deleted automatically.
+FOLDER_EXPIRY_FILE = ".fileshare-expires"
+SWEEP_SECONDS = 60
+THUMB_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+THUMB_MAX_BYTES = 3 * 1024 * 1024  # larger images get the plain icon instead
+MESSAGES = {
+    "uploaded": ("ok", "已上传 {n} 个文件。"),
+    "deleted": ("ok", "已删除。"),
+    "renamed": ("ok", "已改名。"),
+    "created": ("ok", "文件夹已创建。"),
+    "pass_set": ("ok", "文件夹密码已设置。"),
+    "pass_cleared": ("ok", "文件夹密码已清除，改用通用密码。"),
+    "expiry_set": ("ok", "已设置到期时间，到期后该文件夹会被自动删除。"),
+    "expiry_cleared": ("ok", "已取消到期时间。"),
+    "exists": ("err", "已有同名的文件或文件夹，未做改动。"),
+    "failed": ("err", "操作未完成，请检查名称后重试。"),
+}
+# Password guessing: after this many wrong tries from one address inside the
+# window, every further try from it is refused until the window has passed.
+FAIL_LIMIT = 5
+FAIL_WINDOW = 600  # seconds
+_fails = {}
+_fails_lock = threading.Lock()
+
+
+def locked_for(ip):
+    """Seconds this address still has to wait, or 0 if it may try again."""
+    now = time.time()
+    with _fails_lock:
+        recent = [t for t in _fails.get(ip, []) if now - t < FAIL_WINDOW]
+        if recent:
+            _fails[ip] = recent
+        else:
+            _fails.pop(ip, None)
+        if len(recent) >= FAIL_LIMIT:
+            return int(recent[-FAIL_LIMIT] + FAIL_WINDOW - now) + 1
+    return 0
+
+
+def note_failure(ip):
+    with _fails_lock:
+        _fails.setdefault(ip, []).append(time.time())
+
+
+def clear_failures(ip):
+    with _fails_lock:
+        _fails.pop(ip, None)
+
+
+def folder_password(top):
+    """The viewing password set on a top-level folder, or '' if it has none."""
+    try:
+        with open(os.path.join(SHARE_DIR, top, FOLDER_PASS_FILE), encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def folder_expiry(top):
+    """Unix time at which a top-level folder expires, or 0 if it never does."""
+    try:
+        with open(os.path.join(SHARE_DIR, top, FOLDER_EXPIRY_FILE), encoding="utf-8") as f:
+            return int(f.read().strip())
+    except (OSError, ValueError):
+        return 0
+
+
+def sweep_expired():
+    """Delete top-level folders whose expiry has passed. Runs in the background."""
+    while True:
+        try:
+            for name in os.listdir(SHARE_DIR):
+                expires = folder_expiry(name)
+                if expires and expires <= time.time():
+                    shutil.rmtree(os.path.join(SHARE_DIR, name), ignore_errors=True)
+                    print(f"Expired folder removed: {name}", flush=True)
+        except OSError:
+            pass
+        time.sleep(SWEEP_SECONDS)
+
+
+def unique_path(directory, filename):
+    """A path in directory that does not exist yet: name.ext, name (1).ext, ..."""
+    target = os.path.join(directory, filename)
+    stem, ext = os.path.splitext(filename)
+    n = 1
+    while os.path.exists(target):
+        target = os.path.join(directory, f"{stem} ({n}){ext}")
+        n += 1
+    return target
 MAX_UPLOAD_BYTES = 500 * 1024 * 1024  # 500MB per request
 
 ICONS = {
@@ -57,6 +153,11 @@ PAGE_STYLE = """
   td.name a { color:var(--ink); text-decoration:none; }
   td.name a:hover { color:var(--accent); text-decoration:underline; }
   .icon { margin-right:8px; }
+  .thumb { width:40px; height:40px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:10px; background:var(--accent-soft); }
+  .meta { display:block; font-size:.78rem; font-weight:400; color:var(--muted); margin-top:3px; }
+  .days-input { width:76px; }
+  .drop-zone { border:2px dashed var(--line); border-radius:8px; padding:22px 14px; margin-bottom:14px; text-align:center; color:var(--muted); font-size:.9rem; }
+  .drop-zone.over { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
   .empty { text-align:center; color:var(--muted); padding:32px 16px; }
   footer { text-align:center; color:var(--muted); font-size:.8rem; margin-top:20px; }
   @media (max-width:640px) {
@@ -112,7 +213,8 @@ PAGE_STYLE = """
     .manage-row td.name { padding-top:14px; font-weight:600; }
     .manage-row td.actions { display:flex; padding-bottom:14px; border-bottom:1px solid var(--line); }
     .manage-row:last-child td.actions { border-bottom:none; }
-    .actions form[action="/rename"] { flex:1 1 100%; }
+    .actions form[action="/rename"], .actions form[action="/setpass"] { flex:1 1 100%; }
+    .thumb { width:34px; height:34px; margin-right:8px; }
     .rename-input { width:auto; flex:1; min-width:0; }
   }
   a.btn-mini { display:inline-block; text-decoration:none; }
@@ -139,7 +241,7 @@ LIST_TEMPLATE = """<!DOCTYPE html>
 {rows}
     </tbody>
   </table>
-  <footer>共 {count} 项</footer>
+  <footer>共 {count} 项{expiry_note}</footer>
 </div>
 {script}
 </body>
@@ -176,7 +278,7 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
 <body>
 <div class="wrap">
   <div class="panel login">
-    <h2>🔒 请输入访问密码</h2>
+    <h2>{heading}</h2>
     {message}
     <form method="post" action="/login">
       <input type="hidden" name="next" value="{next_attr}">
@@ -285,6 +387,26 @@ UPLOAD_SCRIPT = """<script>
     xhr.send(data);
     input.disabled = true;
   });
+
+  // Dropping files on the zone selects them and starts the upload straight away.
+  var zone = document.getElementById('drop-zone');
+  if (zone) {
+    ['dragenter', 'dragover'].forEach(function (name) {
+      zone.addEventListener(name, function (e) { e.preventDefault(); zone.classList.add('over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (name) {
+      zone.addEventListener(name, function (e) { e.preventDefault(); zone.classList.remove('over'); });
+    });
+    zone.addEventListener('drop', function (e) {
+      if (input.disabled || !e.dataTransfer || !e.dataTransfer.files.length) return;
+      try { input.files = e.dataTransfer.files; } catch (err) { return; }
+      form.dispatchEvent(new Event('submit', { cancelable: true }));
+    });
+    // A file dropped beside the zone must not make the browser open it.
+    ['dragover', 'drop'].forEach(function (name) {
+      window.addEventListener(name, function (e) { e.preventDefault(); });
+    });
+  }
 })();
 </script>"""
 
@@ -316,7 +438,8 @@ UPLOAD_TEMPLATE = """<!DOCTYPE html>
     <h2>上传文件</h2>
     <form method="post" action="/upload" enctype="multipart/form-data" id="upload-form">
       <input type="hidden" name="folder" value="{folder_attr}">
-      <label for="upload-files">选择一个或多个文件</label>
+      <div class="drop-zone" id="drop-zone">把文件拖到这里即可上传</div>
+      <label for="upload-files">或选择一个或多个文件</label>
       <input type="file" id="upload-files" name="files" multiple required>
       <button type="submit" id="upload-button">上传</button>
     </form>
@@ -428,7 +551,8 @@ class ShareHandler(SimpleHTTPRequestHandler):
         if not rel and not authed:
             return self._respond_html(PRIVATE_ROOT_TEMPLATE.format(style=PAGE_STYLE))
         # Same reason: no "up" link out of a top-level folder for visitors.
-        if rel and (authed or "/" in rel.replace(os.sep, "/")):
+        has_parent = bool(rel) and (authed or "/" in rel.replace(os.sep, "/"))
+        if has_parent:
             rows.append('    <tr class="parent"><td colspan="4">⬆ <a href="../">上一级目录</a></td></tr>')
 
         for name in names:
@@ -454,16 +578,23 @@ class ShareHandler(SimpleHTTPRequestHandler):
                     f' <a class="btn-mini" title="下载" href="{link}?dl=1" download>'
                     f'⬇<span class="lbl"> 下载</span></a>'
                 )
+            icon_html = f'<span class="icon">{icon}</span>'
+            if not is_dir and ext in THUMB_EXTS and os.path.getsize(full) <= THUMB_MAX_BYTES:
+                icon_html = f'<img class="thumb" src="{link}" alt="" loading="lazy">'
             rows.append(
-                f'    <tr><td class="name"><span class="icon">{icon}</span>'
+                f'    <tr><td class="name">{icon_html}'
                 f'<a href="{link}">{html.escape(display)}</a></td>'
                 f'<td class="size">{size_str}</td><td class="mtime">{mtime}</td>'
                 f'<td class="dl">{dl_cell}</td></tr>'
             )
 
-        count = len(rows) - (1 if rel else 0)
+        count = len(rows) - (1 if has_parent else 0)
         # Visitors never see the management link. It appears only for a browser that
         # has already logged in at /upload (it then sends the login with each request).
+        expiry_note = ""
+        expires = folder_expiry(rel.replace(os.sep, "/").split("/")[0]) if rel else 0
+        if expires:
+            expiry_note = " · 此分享将于 " + datetime.fromtimestamp(expires).strftime("%Y-%m-%d %H:%M") + " 到期"
         manage_link = ""
         if authed:
             manage_link = (
@@ -476,6 +607,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
             manage_link=manage_link,
+            expiry_note=expiry_note,
             rows="\n".join(rows) if rows else '    <tr><td colspan="4" class="empty">暂无文件</td></tr>',
             count=count,
         )
@@ -495,18 +627,54 @@ class ShareHandler(SimpleHTTPRequestHandler):
         expected = "Basic " + base64.b64encode(f"{UPLOAD_USER}:{UPLOAD_PASS}".encode()).decode()
         return self.headers.get("Authorization") == expected
 
-    def view_token(self):
-        # Changes whenever either password changes, which signs everyone out.
-        return hashlib.sha256(f"fileshare-view:{VIEW_PASS}:{UPLOAD_PASS}".encode()).hexdigest()
+    def rel_parts(self, url_path):
+        """Path components of a request, relative to the share directory."""
+        fs_path = self.translate_path(urllib.parse.urlparse(url_path).path)
+        rel = os.path.relpath(fs_path, SHARE_DIR)
+        if rel == "." or rel.startswith(".."):
+            return []
+        return rel.split(os.sep)
 
-    def can_view(self):
-        """True if no viewing password is set, or this request carries the viewing
-        cookie, or it is the logged-in owner."""
-        if not VIEW_PASS or self.is_authed():
+    def is_hidden(self, url_path):
+        """Dot-files (including folder password files) are never served."""
+        return any(part.startswith(".") for part in self.rel_parts(url_path))
+
+    def scope_for(self, url_path):
+        """Which password guards a request: the name of the top-level folder it is
+        in when that folder has its own password, otherwise '' (the shared one)."""
+        parts = self.rel_parts(url_path)
+        if parts and os.path.isdir(os.path.join(SHARE_DIR, parts[0])) and folder_password(parts[0]):
+            return parts[0]
+        return ""
+
+    @staticmethod
+    def scope_password(scope):
+        return folder_password(scope) if scope else VIEW_PASS
+
+    @staticmethod
+    def scope_cookie(scope):
+        if not scope:
+            return VIEW_COOKIE
+        return VIEW_COOKIE + "_" + hashlib.sha256(scope.encode()).hexdigest()[:12]
+
+    @staticmethod
+    def scope_token(scope, password):
+        # Changes whenever that password or the admin password changes, which
+        # signs out everyone who was using it.
+        return hashlib.sha256(f"fileshare-view:{scope}:{password}:{UPLOAD_PASS}".encode()).hexdigest()
+
+    def can_view(self, url_path):
+        """True if nothing guards this path, or this request carries the matching
+        viewing cookie, or it is the logged-in owner."""
+        scope = self.scope_for(url_path)
+        password = self.scope_password(scope)
+        if not password or self.is_authed():
             return True
+        wanted_name = self.scope_cookie(scope)
+        wanted_value = self.scope_token(scope, password)
         for part in self.headers.get("Cookie", "").split(";"):
             key, _, value = part.strip().partition("=")
-            if key == VIEW_COOKIE and hmac.compare_digest(value, self.view_token()):
+            if key == wanted_name and hmac.compare_digest(value, wanted_value):
                 return True
         return False
 
@@ -517,11 +685,15 @@ class ShareHandler(SimpleHTTPRequestHandler):
             return target
         return "/"
 
-    def serve_login_page(self, next_path, failed=False, status=200):
+    def serve_login_page(self, next_path, message="", status=200):
+        next_path = self.safe_next(next_path)
+        scope = self.scope_for(next_path)
+        heading = f"🔒 请输入「{html.escape(scope)}」的访问密码" if scope else "🔒 请输入访问密码"
         body = LOGIN_TEMPLATE.format(
             style=PAGE_STYLE,
-            message='<div class="msg err">密码不正确，请重试。</div>' if failed else "",
-            next_attr=html.escape(self.safe_next(next_path), quote=True),
+            heading=heading,
+            message=f'<div class="msg err">{message}</div>' if message else "",
+            next_attr=html.escape(next_path, quote=True),
         ).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -531,6 +703,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(body)
 
+    @staticmethod
+    def wait_message(seconds):
+        return f"尝试次数过多，请 {max(1, (seconds + 59) // 60)} 分钟后再试。"
+
     def handle_login(self):
         length = int(self.headers.get("Content-Length", 0))
         if length < 0 or length > 4096:
@@ -538,22 +714,48 @@ class ShareHandler(SimpleHTTPRequestHandler):
             return
         data = urllib.parse.parse_qs(self.rfile.read(length).decode("utf-8", "replace"))
         next_path = self.safe_next(data.get("next", ["/"])[0])
-        password = data.get("password", [""])[0]
-        if not VIEW_PASS or not hmac.compare_digest(password.encode(), VIEW_PASS.encode()):
-            self.serve_login_page(next_path, failed=bool(VIEW_PASS), status=200 if not VIEW_PASS else 403)
+        ip = self.client_address[0]
+        wait = locked_for(ip)
+        if wait:
+            self.serve_login_page(next_path, self.wait_message(wait), status=429)
             return
+        scope = self.scope_for(next_path)
+        expected = self.scope_password(scope)
+        if not expected:
+            self._redirect(next_path)
+            return
+        password = data.get("password", [""])[0]
+        if not hmac.compare_digest(password.encode(), expected.encode()):
+            note_failure(ip)
+            wait = locked_for(ip)
+            self.serve_login_page(next_path, self.wait_message(wait) if wait else "密码不正确，请重试。", status=403)
+            return
+        clear_failures(ip)
         self.send_response(303)
         self.send_header("Location", next_path)
         self.send_header(
             "Set-Cookie",
-            f"{VIEW_COOKIE}={self.view_token()}; Max-Age={VIEW_COOKIE_DAYS * 86400}; Path=/; HttpOnly; SameSite=Lax",
+            f"{self.scope_cookie(scope)}={self.scope_token(scope, expected)}; "
+            f"Max-Age={VIEW_COOKIE_DAYS * 86400}; Path=/; HttpOnly; SameSite=Lax",
         )
         self.send_header("Content-Length", "0")
         self.end_headers()
 
     def check_auth(self):
+        ip = self.client_address[0]
+        wait = locked_for(ip)
+        if wait:
+            body = f"<h1>{self.wait_message(wait)}</h1>".encode("utf-8")
+            self.send_response(429)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return False
         if self.is_authed():
             return True
+        if self.headers.get("Authorization"):
+            note_failure(ip)
         body = "<h1>需要登录才能上传</h1>".encode("utf-8")
         self.send_response(401)
         self.send_header("WWW-Authenticate", 'Basic realm="upload"')
@@ -573,12 +775,16 @@ class ShareHandler(SimpleHTTPRequestHandler):
             self.serve_upload_page(parsed)
             return
         if parsed.path == "/login":
-            if self.can_view():
-                self._redirect(self.safe_next(urllib.parse.parse_qs(parsed.query).get("next", ["/"])[0]))
+            next_path = self.safe_next(urllib.parse.parse_qs(parsed.query).get("next", ["/"])[0])
+            if self.can_view(next_path):
+                self._redirect(next_path)
             else:
-                self.serve_login_page(urllib.parse.parse_qs(parsed.query).get("next", ["/"])[0])
+                self.serve_login_page(next_path)
             return
-        if not self.can_view():
+        if self.is_hidden(self.path):
+            self.send_error(404, "Not Found")
+            return
+        if not self.can_view(self.path):
             self._redirect("/login?next=" + urllib.parse.quote(self.path, safe=""))
             return
         # ?dl=1 on a file: send it as an attachment so the browser saves it
@@ -598,7 +804,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_HEAD(self):
-        if not self.can_view():
+        if self.is_hidden(self.path):
+            self.send_error(404, "Not Found")
+            return
+        if not self.can_view(self.path):
             self.send_error(403, "Forbidden")
             return
         super().do_HEAD()
@@ -618,6 +827,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
             self.handle_delete()
         elif parsed.path == "/rename":
             self.handle_rename()
+        elif parsed.path == "/setpass":
+            self.handle_setpass()
+        elif parsed.path == "/setexpiry":
+            self.handle_setexpiry()
         else:
             self.send_error(404)
 
@@ -626,6 +839,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
     def serve_upload_page(self, parsed, message=""):
         qs = urllib.parse.parse_qs(parsed.query)
         folder = qs.get("folder", [""])[0].strip("/")
+        code, _, count = qs.get("msg", [""])[0].partition(":")
+        if code in MESSAGES:
+            kind, text = MESSAGES[code]
+            message = f'<div class="msg {kind}">{text.format(n=int(count) if count.isdigit() else 0)}</div>'
         try:
             folder_abs = safe_join(SHARE_DIR, folder)
         except ValueError:
@@ -671,10 +888,31 @@ class ShareHandler(SimpleHTTPRequestHandler):
                 name_cell = f'<a href="/upload?folder={urllib.parse.quote(sub_rel)}">{icon} {name_esc}</a>'
             else:
                 name_cell = f'{icon} {name_esc}'
+            pass_form = ""
+            if is_dir and not folder_rel:
+                expires = folder_expiry(name)
+                if expires:
+                    left = max(0, expires - time.time()) / 86400
+                    name_cell += (
+                        '<span class="meta">⏳ 到期：'
+                        + datetime.fromtimestamp(expires).strftime("%Y-%m-%d %H:%M")
+                        + f"（还剩 {left:.1f} 天），到期后自动删除</span>"
+                    )
+                pass_form = f"""
+        <form method="post" action="/setexpiry">
+          <input type="hidden" name="name" value="{name_esc}">
+          <input type="number" name="days" min="0" max="3650" step="any" placeholder="天数" class="rename-input days-input" title="几天后自动删除；留空或 0＝不过期">
+          <button type="submit" class="btn-mini">⏳ 设到期</button>
+        </form>""" + f"""
+        <form method="post" action="/setpass">
+          <input type="hidden" name="name" value="{name_esc}">
+          <input type="text" name="password" value="{html.escape(folder_password(name), quote=True)}" placeholder="文件夹密码（留空＝用通用密码）" class="rename-input" autocomplete="off">
+          <button type="submit" class="btn-mini">🔒 设密码</button>
+        </form>"""
             rows.append(f"""    <tr class="manage-row">
       <td class="name">{name_cell}</td>
       <td class="actions">
-        <button type="button" class="btn-mini" onclick="copyLink('{link_url}', this)">🔗 复制链接</button>
+        <button type="button" class="btn-mini" onclick="copyLink('{link_url}', this)">🔗 复制链接</button>{pass_form}
         <form method="post" action="/rename">
           <input type="hidden" name="folder" value="{folder_attr}">
           <input type="hidden" name="old_name" value="{name_esc}">
@@ -712,12 +950,13 @@ class ShareHandler(SimpleHTTPRequestHandler):
         saved = 0
         for _, filename, content in files:
             filename = os.path.basename(filename)
-            if not filename:
+            if not filename or filename.startswith("."):
                 continue
-            with open(os.path.join(target_dir, filename), "wb") as f:
+            # Never replace an existing file: a second "a.pdf" is saved as "a (1).pdf".
+            with open(unique_path(target_dir, filename), "wb") as f:
                 f.write(content)
             saved += 1
-        self._redirect_to_folder(folder, ok=saved > 0)
+        self._back_to_manage(folder, f"uploaded:{saved}" if saved else "failed")
 
     def handle_mkdir(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -730,11 +969,14 @@ class ShareHandler(SimpleHTTPRequestHandler):
         except ValueError:
             self.send_error(400, "Bad Request")
             return
-        if not name or "/" in name or name in (".", ".."):
-            self._redirect(f"/upload?folder={urllib.parse.quote(folder)}")
+        if not name or "/" in name or name.startswith("."):
+            self._back_to_manage(folder, "failed")
             return
-        os.makedirs(os.path.join(parent, name), exist_ok=True)
-        self._redirect_to_folder(folder, ok=True)
+        if os.path.exists(os.path.join(parent, name)):
+            self._back_to_manage(folder, "exists")
+            return
+        os.makedirs(os.path.join(parent, name))
+        self._back_to_manage(folder, "created")
 
     def handle_delete(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -743,7 +985,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
         folder = data.get("folder", [""])[0]
         name = data.get("name", [""])[0]
         if not name or "/" in name or name in (".", ".."):
-            self._redirect_to_folder(folder, ok=False)
+            self._back_to_manage(folder, "failed")
             return
         try:
             parent = safe_join(SHARE_DIR, folder)
@@ -755,7 +997,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
             shutil.rmtree(target, ignore_errors=True)
         elif os.path.isfile(target):
             os.remove(target)
-        self._redirect_to_folder(folder, ok=True)
+        else:
+            self._back_to_manage(folder, "failed")
+            return
+        self._back_to_manage(folder, "deleted")
 
     def handle_rename(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -772,20 +1017,73 @@ class ShareHandler(SimpleHTTPRequestHandler):
         invalid = (
             not old_name or not new_name
             or "/" in old_name or "/" in new_name
-            or old_name in (".", "..") or new_name in (".", "..")
+            or old_name.startswith(".") or new_name.startswith(".")
         )
         if invalid:
-            self._redirect_to_folder(folder, ok=False)
+            self._back_to_manage(folder, "failed")
             return
         old_path = os.path.join(parent, old_name)
         new_path = os.path.join(parent, new_name)
-        if os.path.exists(old_path) and not os.path.exists(new_path):
-            os.rename(old_path, new_path)
-        self._redirect_to_folder(folder, ok=True)
+        if not os.path.exists(old_path):
+            self._back_to_manage(folder, "failed")
+            return
+        if old_name == new_name:
+            self._back_to_manage(folder, "renamed")
+            return
+        if os.path.exists(new_path):
+            self._back_to_manage(folder, "exists")
+            return
+        os.rename(old_path, new_path)
+        self._back_to_manage(folder, "renamed")
 
-    def _redirect_to_folder(self, folder, ok):
-        location = "/" + urllib.parse.quote(folder) + ("/" if folder else "")
-        self._redirect(location)
+    def handle_setpass(self):
+        """Set or clear (empty value) the viewing password of a top-level folder."""
+        length = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(length).decode("utf-8", "replace")
+        data = urllib.parse.parse_qs(raw, keep_blank_values=True)
+        name = data.get("name", [""])[0]
+        password = data.get("password", [""])[0].strip()[:200]
+        folder = os.path.join(SHARE_DIR, name)
+        if not name or "/" in name or name.startswith(".") or not os.path.isdir(folder):
+            self.send_error(400, "Bad Request")
+            return
+        pass_file = os.path.join(folder, FOLDER_PASS_FILE)
+        if password:
+            with open(pass_file, "w", encoding="utf-8") as f:
+                f.write(password + "\n")
+        elif os.path.exists(pass_file):
+            os.remove(pass_file)
+        self._back_to_manage("", "pass_set" if password else "pass_cleared")
+
+    def handle_setexpiry(self):
+        """Set (days from now) or clear (empty or 0) the expiry of a top-level folder."""
+        length = int(self.headers.get("Content-Length", 0))
+        raw = self.rfile.read(length).decode("utf-8", "replace")
+        data = urllib.parse.parse_qs(raw, keep_blank_values=True)
+        name = data.get("name", [""])[0]
+        folder = os.path.join(SHARE_DIR, name)
+        if not name or "/" in name or name.startswith(".") or not os.path.isdir(folder):
+            self.send_error(400, "Bad Request")
+            return
+        try:
+            days = float(data.get("days", [""])[0].strip() or 0)
+        except ValueError:
+            self._back_to_manage("", "failed")
+            return
+        if not 0 <= days <= 3650:
+            self._back_to_manage("", "failed")
+            return
+        expiry_file = os.path.join(folder, FOLDER_EXPIRY_FILE)
+        if days > 0:
+            with open(expiry_file, "w", encoding="utf-8") as f:
+                f.write(str(int(time.time() + days * 86400)) + "\n")
+        elif os.path.exists(expiry_file):
+            os.remove(expiry_file)
+        self._back_to_manage("", "expiry_set" if days > 0 else "expiry_cleared")
+
+    def _back_to_manage(self, folder, msg):
+        """Return to the management page of a folder, showing what just happened."""
+        self._redirect(f"/upload?folder={urllib.parse.quote(folder.strip('/'))}&msg={msg}")
 
     def _redirect(self, location):
         self.send_response(303)
@@ -800,6 +1098,7 @@ def main():
         raise SystemExit("UPLOAD_PASS environment variable must be set")
     handler = partial(ShareHandler, directory=SHARE_DIR)
     server = ThreadingHTTPServer(("0.0.0.0", PORT), handler)
+    threading.Thread(target=sweep_expired, daemon=True).start()
     print(f"Serving {SHARE_DIR} on port {PORT}; upload user={UPLOAD_USER}; viewing password {'on' if VIEW_PASS else 'off'}")
     server.serve_forever()
 
