@@ -131,11 +131,12 @@ ICONS = {
 }
 
 PAGE_STYLE = """
-  :root { --ink:#1b2430; --muted:#6b7680; --line:#e2e6e4; --paper:#f6f7f6; --card:#ffffff; --accent:#1c7c82; --accent-soft:#e3f0ef; }
+  :root { --ink:#1b2430; --muted:#6b7680; --line:#e2e6e4; --paper:#f6f7f6; --card:#ffffff; --accent:#1c7c82; --accent-soft:#e3f0ef; --on-accent:#ffffff; --danger:#a8452e; --danger-soft:#f7e9e5; }
   @media (prefers-color-scheme: dark) {
-    :root { --ink:#e8eeec; --muted:#93a3a2; --line:#2b3639; --paper:#12181c; --card:#1b262a; --accent:#59c4c0; --accent-soft:#1c2f2f; }
+    :root { --ink:#e8eeec; --muted:#93a3a2; --line:#2b3639; --paper:#12181c; --card:#1b262a; --accent:#59c4c0; --accent-soft:#1c2f2f; --on-accent:#0d2523; --danger:#f0a08c; --danger-soft:#3a2420; }
   }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
   body { margin:0; background:var(--paper); color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif; }
   .wrap { max-width:1120px; margin:0 auto; padding:40px 20px 80px; }
@@ -155,9 +156,6 @@ PAGE_STYLE = """
   .icon { margin-right:8px; }
   .thumb { width:40px; height:40px; object-fit:cover; border-radius:4px; vertical-align:middle; margin-right:10px; background:var(--accent-soft); }
   .meta { display:block; font-size:.78rem; font-weight:400; color:var(--muted); margin-top:3px; }
-  .days-input { width:76px; }
-  .drop-zone { border:2px dashed var(--line); border-radius:8px; padding:22px 14px; margin-bottom:14px; text-align:center; color:var(--muted); font-size:.9rem; }
-  .drop-zone.over { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
   .empty { text-align:center; color:var(--muted); padding:32px 16px; }
   footer { text-align:center; color:var(--muted); font-size:.8rem; margin-top:20px; }
   @media (max-width:640px) {
@@ -169,53 +167,79 @@ PAGE_STYLE = """
     td.dl .lbl { display:none; }
     td.dl .btn-mini { padding:6px 9px; }
   }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:20px 22px; margin-bottom:20px; }
-  .panel h2 { font-size:1rem; margin:0 0 14px; }
-  .panel label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:6px; }
-  .panel input[type=text], .panel input[type=file] {
-    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:5px;
-    background:var(--paper); color:var(--ink); font-size:.92rem; margin-bottom:14px;
-  }
-  .panel button {
-    background:var(--accent); color:#fff; border:none; padding:9px 18px;
-    border-radius:5px; font-size:.9rem; cursor:pointer;
-  }
-  .panel button:hover { opacity:.9; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px 24px; margin-bottom:20px; }
+  .panel h2 { font-size:1rem; margin:0 0 16px; }
+  .panel-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:6px; }
+  .panel-head h2 { margin:0; }
+  .panel-head .count { font-size:.8rem; color:var(--muted); }
   .msg { padding:10px 14px; border-radius:6px; font-size:.88rem; margin-bottom:18px; }
   .msg.ok { background:var(--accent-soft); color:var(--accent); }
-  .msg.err { background:#f7e9e5; color:#a8452e; }
-  .manage-row td { vertical-align:middle; }
-  .manage-row .name a { color:var(--ink); text-decoration:none; }
-  .manage-row .name a:hover { color:var(--accent); text-decoration:underline; }
-  .actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .actions form { display:flex; gap:6px; align-items:center; margin:0; }
-  .rename-input {
-    width:200px; padding:6px 8px; border:1px solid var(--line); border-radius:4px;
-    background:var(--paper); color:var(--ink); font-size:.85rem; margin:0;
-  }
+  .msg.err { background:var(--danger-soft); color:var(--danger); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid transparent; border-radius:6px;
+    padding:8px 14px; font-size:.88rem; line-height:1.25; font-family:inherit; cursor:pointer; white-space:nowrap; text-decoration:none; }
+  .btn:hover { opacity:.88; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .btn-primary { background:var(--accent); color:var(--on-accent); }
+  .btn-soft { background:var(--accent-soft); color:var(--accent); }
+  .btn-ghost { background:transparent; border-color:var(--line); color:var(--ink); }
+  .btn-danger { background:var(--danger-soft); color:var(--danger); }
   .btn-mini {
     background:var(--accent-soft); color:var(--accent); border:none; padding:6px 12px;
     border-radius:4px; font-size:.82rem; cursor:pointer; white-space:nowrap;
   }
   .btn-mini:hover { opacity:.85; }
-  .btn-mini.btn-danger { background:#f7e9e5; color:#a8452e; }
+  .form-block label, .field label { display:block; font-size:.78rem; color:var(--muted); margin-bottom:6px; }
+  .text-input { width:100%; min-width:0; padding:8px 10px; border:1px solid var(--line); border-radius:6px;
+    background:var(--paper); color:var(--ink); font-size:.9rem; line-height:1.25; font-family:inherit; }
+  .text-input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  .form-block > .text-input { margin-bottom:14px; }
+  .group { display:flex; }
+  .group .text-input { border-radius:6px 0 0 6px; border-right:none; }
+  .group .btn { border-radius:0 6px 6px 0; }
+  .hint { font-size:.74rem; color:var(--muted); margin:6px 0 0; }
+  .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .crumbs { font-size:.9rem; color:var(--muted); margin:-12px 0 20px; overflow-wrap:anywhere; }
+  .crumbs a { color:var(--accent); text-decoration:none; }
+  .crumbs a:hover { text-decoration:underline; }
+  .crumbs strong { color:var(--ink); font-weight:600; }
+  .tools { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:20px; margin-bottom:20px; }
+  .tools .panel { margin-bottom:0; }
+  .drop-zone { display:block; cursor:pointer; border:2px dashed var(--line); border-radius:8px; padding:26px 14px; text-align:center; color:var(--muted); font-size:.85rem; }
+  .drop-zone strong { display:block; color:var(--ink); font-size:.95rem; font-weight:600; margin-bottom:4px; }
+  .drop-zone:hover, .drop-zone.over { border-color:var(--accent); background:var(--accent-soft); }
+  .chosen { font-size:.85rem; color:var(--muted); margin:12px 0 14px; overflow-wrap:anywhere; }
+  .item { padding:14px 0; border-top:1px solid var(--line); }
+  .item:last-child { padding-bottom:0; }
+  .item-head { display:flex; align-items:center; gap:12px; }
+  .item-icon { flex:none; width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+    font-size:1.25rem; background:var(--paper); border-radius:6px; overflow:hidden; }
+  .item-icon img { width:40px; height:40px; object-fit:cover; }
+  .item-title { flex:1; min-width:0; }
+  .item-name { font-weight:600; font-size:.95rem; color:var(--ink); text-decoration:none; overflow-wrap:anywhere; }
+  a.item-name:hover { color:var(--accent); text-decoration:underline; }
+  .item-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:4px; font-size:.78rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .badge { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:1px 9px; font-size:.72rem; white-space:nowrap; }
+  .badge.warn { background:var(--danger-soft); color:var(--danger); }
+  .item-actions { display:flex; gap:8px; flex:none; }
+  .item-actions form { margin:0; }
+  .item-fields { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px 20px;
+    margin:14px 0 2px 52px; padding:16px 18px; background:var(--paper); border-radius:8px; }
+  .item-fields form { margin:0; }
   .progress { margin-top:14px; }
   .progress-track { height:10px; background:var(--accent-soft); border-radius:5px; overflow:hidden; }
   .progress-fill { height:100%; width:0; background:var(--accent); transition:width .15s linear; }
   .progress-text { display:flex; justify-content:space-between; gap:12px; margin-top:6px; font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .progress.err .progress-fill { background:#a8452e; }
-  .progress.err .progress-text { color:#a8452e; }
-  .panel button:disabled { opacity:.5; cursor:default; }
+  .progress.err .progress-fill { background:var(--danger); }
+  .progress.err .progress-text { color:var(--danger); }
+  @media (max-width:820px) {
+    .tools { grid-template-columns:minmax(0,1fr); }
+  }
   @media (max-width:640px) {
     .panel { padding:16px 14px; }
-    .panel thead { display:none; }
-    .manage-row td { display:block; padding:6px 10px; border-bottom:none; }
-    .manage-row td.name { padding-top:14px; font-weight:600; }
-    .manage-row td.actions { display:flex; padding-bottom:14px; border-bottom:1px solid var(--line); }
-    .manage-row:last-child td.actions { border-bottom:none; }
-    .actions form[action="/rename"], .actions form[action="/setpass"] { flex:1 1 100%; }
     .thumb { width:34px; height:34px; margin-right:8px; }
-    .rename-input { width:auto; flex:1; min-width:0; }
+    .item-head { flex-wrap:wrap; }
+    .item-actions { width:100%; padding-left:52px; flex-wrap:wrap; }
+    .item-fields { margin-left:0; padding:14px; grid-template-columns:minmax(0,1fr); }
   }
   a.btn-mini { display:inline-block; text-decoration:none; }
   td.dl { text-align:right; white-space:nowrap; }
@@ -280,11 +304,11 @@ LOGIN_TEMPLATE = """<!DOCTYPE html>
   <div class="panel login">
     <h2>{heading}</h2>
     {message}
-    <form method="post" action="/login">
+    <form method="post" action="/login" class="form-block">
       <input type="hidden" name="next" value="{next_attr}">
       <label for="view-password">访问密码</label>
-      <input type="text" id="view-password" name="password" autocomplete="off" autocapitalize="off" autofocus required>
-      <button type="submit">进入</button>
+      <input type="text" class="text-input" id="view-password" name="password" autocomplete="off" autocapitalize="off" autofocus required>
+      <button type="submit" class="btn btn-primary">进入</button>
     </form>
   </div>
 </div>
@@ -354,7 +378,10 @@ UPLOAD_SCRIPT = """<script>
     event.preventDefault();
     var total = 0;
     for (var i = 0; i < input.files.length; i++) total += input.files[i].size;
-    if (!input.files.length) return;
+    if (!input.files.length) {
+      fail('请先选择要上传的文件。');
+      return;
+    }
     if (total > MAX_BYTES) {
       fail('所选文件共 ' + size(total) + '，超过单次上传上限 ' + size(MAX_BYTES) + '。请分批上传。');
       return;
@@ -388,6 +415,17 @@ UPLOAD_SCRIPT = """<script>
     input.disabled = true;
   });
 
+  var chosen = document.getElementById('upload-chosen');
+  function showChosen() {
+    if (!chosen) return;
+    var n = input.files.length, total = 0;
+    for (var i = 0; i < n; i++) total += input.files[i].size;
+    if (!n) chosen.textContent = '尚未选择文件';
+    else if (n === 1) chosen.textContent = '已选择：' + input.files[0].name + '（' + size(total) + '）';
+    else chosen.textContent = '已选择 ' + n + ' 个文件，共 ' + size(total);
+  }
+  input.addEventListener('change', function () { box.hidden = true; showChosen(); });
+
   // Dropping files on the zone selects them and starts the upload straight away.
   var zone = document.getElementById('drop-zone');
   if (zone) {
@@ -400,6 +438,7 @@ UPLOAD_SCRIPT = """<script>
     zone.addEventListener('drop', function (e) {
       if (input.disabled || !e.dataTransfer || !e.dataTransfer.files.length) return;
       try { input.files = e.dataTransfer.files; } catch (err) { return; }
+      showChosen();
       form.dispatchEvent(new Event('submit', { cancelable: true }));
     });
     // A file dropped beside the zone must not make the browser open it.
@@ -410,52 +449,70 @@ UPLOAD_SCRIPT = """<script>
 })();
 </script>"""
 
+MANAGE_SCRIPT = """<script>
+function toggleFields(btn) {
+  var el = document.getElementById(btn.getAttribute('aria-controls'));
+  if (!el) return;
+  el.hidden = !el.hidden;
+  btn.setAttribute('aria-expanded', String(!el.hidden));
+  if (!el.hidden) {
+    var first = el.querySelector('input[type=text], input[type=number]');
+    if (first) first.focus();
+  }
+}
+</script>"""
+
 UPLOAD_TEMPLATE = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>上传文件</title>
+<title>管理文件</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>{style}</style>
+<noscript><style>.item-fields[hidden] {{ display:grid !important; }}</style></noscript>
 </head>
 <body>
 <div class="wrap">
   <div class="topbar">
-    <h1>📤 上传到 /{folder_display}</h1>
-    <a class="upload-link" href="/{folder_href}">← 返回列表</a>
+    <h1>🛠 管理文件</h1>
+    <a class="upload-link" href="/{folder_href}">查看访客页面 →</a>
   </div>
+  <nav class="crumbs" aria-label="当前位置">{crumbs}</nav>
   {message}
-  <div class="panel">
-    <h2>当前文件夹内容</h2>
-    <table>
-      <thead><tr><th>名称</th><th>操作</th></tr></thead>
-      <tbody>
-{manage_rows}
-      </tbody>
-    </table>
-  </div>
-  <div class="panel">
-    <h2>上传文件</h2>
-    <form method="post" action="/upload" enctype="multipart/form-data" id="upload-form">
-      <input type="hidden" name="folder" value="{folder_attr}">
-      <div class="drop-zone" id="drop-zone">把文件拖到这里即可上传</div>
-      <label for="upload-files">或选择一个或多个文件</label>
-      <input type="file" id="upload-files" name="files" multiple required>
-      <button type="submit" id="upload-button">上传</button>
-    </form>
-    <div class="progress" id="upload-progress" hidden>
-      <div class="progress-track"><div class="progress-fill" id="upload-fill"></div></div>
-      <div class="progress-text"><span id="upload-status"></span><span id="upload-percent"></span></div>
+  <div class="tools">
+    <div class="panel">
+      <h2>上传文件到此文件夹</h2>
+      <form method="post" action="/upload" enctype="multipart/form-data" id="upload-form">
+        <input type="hidden" name="folder" value="{folder_attr}">
+        <label class="drop-zone" id="drop-zone" for="upload-files"><strong>把文件拖到这里</strong>或点击选择文件 · 单次最多 {max_size}</label>
+        <input type="file" class="visually-hidden" id="upload-files" name="files" multiple>
+        <p class="chosen" id="upload-chosen">尚未选择文件</p>
+        <button type="submit" class="btn btn-primary" id="upload-button">上传</button>
+      </form>
+      <div class="progress" id="upload-progress" hidden>
+        <div class="progress-track"><div class="progress-fill" id="upload-fill"></div></div>
+        <div class="progress-text"><span id="upload-status"></span><span id="upload-percent"></span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>新建文件夹</h2>
+      <form method="post" action="/mkdir" class="form-block">
+        <input type="hidden" name="folder" value="{folder_attr}">
+        <label for="new-folder-name">文件夹名称</label>
+        <div class="group">
+          <input type="text" class="text-input" id="new-folder-name" name="name" placeholder="例如：合同" required>
+          <button type="submit" class="btn btn-primary">创建</button>
+        </div>
+        {mkdir_hint}
+      </form>
     </div>
   </div>
   <div class="panel">
-    <h2>新建文件夹</h2>
-    <form method="post" action="/mkdir">
-      <input type="hidden" name="folder" value="{folder_attr}">
-      <label>文件夹名称</label>
-      <input type="text" name="name" placeholder="例如：合同" required>
-      <button type="submit">创建</button>
-    </form>
+    <div class="panel-head">
+      <h2>此文件夹的内容</h2>
+      <span class="count">{count_text}</span>
+    </div>
+{manage_rows}
   </div>
 </div>
 {script}
@@ -848,14 +905,18 @@ class ShareHandler(SimpleHTTPRequestHandler):
         except ValueError:
             folder = ""
             folder_abs = SHARE_DIR
+        manage_rows, count_text = self._manage_rows(folder_abs, folder)
         body = UPLOAD_TEMPLATE.format(
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
-            upload_script=UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
-            folder_display=html.escape(folder) if folder else "",
+            upload_script=MANAGE_SCRIPT + "\n" + UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
+            crumbs=self._crumbs(folder),
             folder_href=urllib.parse.quote(folder) + ("/" if folder else ""),
             folder_attr=html.escape(folder),
-            manage_rows=self._manage_rows(folder_abs, folder),
+            max_size=human_size(MAX_UPLOAD_BYTES).replace(".0", ""),
+            mkdir_hint="" if folder else '<p class="hint">顶层文件夹的名称是分享链接的一部分，起一个不容易被猜到的名字。</p>',
+            count_text=count_text,
+            manage_rows=manage_rows,
             message=message,
         )
         encoded = body.encode("utf-8")
@@ -865,68 +926,118 @@ class ShareHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
+    @staticmethod
+    def _crumbs(folder):
+        """Breadcrumb for the management page: every level links to its own page."""
+        parts = [p for p in folder.split("/") if p]
+        if not parts:
+            return "<strong>根目录</strong>"
+        out = ['<a href="/upload">根目录</a>']
+        for i, part in enumerate(parts):
+            if i == len(parts) - 1:
+                out.append(f"<strong>{html.escape(part)}</strong>")
+            else:
+                target = urllib.parse.quote("/".join(parts[: i + 1]))
+                out.append(f'<a href="/upload?folder={target}">{html.escape(part)}</a>')
+        return " / ".join(out)
+
     def _manage_rows(self, folder_abs, folder_rel):
+        """The item list of the management page, plus a short count for its header."""
         try:
             names = [n for n in os.listdir(folder_abs) if not n.startswith(".")]
         except OSError:
-            return '    <tr><td colspan="2" class="empty">文件夹不存在</td></tr>'
+            return '    <div class="empty">文件夹不存在</div>', ""
         if not names:
-            return '    <tr><td colspan="2" class="empty">此文件夹为空</td></tr>'
+            return '    <div class="empty">此文件夹为空，上传文件或新建文件夹后会显示在这里。</div>', "共 0 项"
         names.sort(key=lambda n: os.path.getmtime(os.path.join(folder_abs, n)), reverse=True)
-        folder_attr = html.escape(folder_rel)
+        folder_attr = html.escape(folder_rel, quote=True)
         host = self.headers.get("Host", f"localhost:{PORT}")
         rows = []
-        for name in names:
+        for index, name in enumerate(names):
             full = os.path.join(folder_abs, name)
             is_dir = os.path.isdir(full)
             ext = os.path.splitext(name)[1].lower()
-            icon = "📁" if is_dir else ICONS.get(ext, "📄")
-            name_esc = html.escape(name)
+            name_esc = html.escape(name, quote=True)
             sub_rel = (folder_rel + "/" + name) if folder_rel else name
-            link_url = f"http://{host}/{urllib.parse.quote(sub_rel)}" + ("/" if is_dir else "")
+            sub_q = urllib.parse.quote(sub_rel)
+            link_url = f"http://{host}/{sub_q}" + ("/" if is_dir else "")
+            mtime = datetime.fromtimestamp(os.path.getmtime(full)).strftime("%Y-%m-%d %H:%M")
+
+            icon = "📁" if is_dir else ICONS.get(ext, "📄")
+            if not is_dir and ext in THUMB_EXTS and os.path.getsize(full) <= THUMB_MAX_BYTES:
+                icon = f'<img src="/{sub_q}" alt="" loading="lazy">'
             if is_dir:
-                name_cell = f'<a href="/upload?folder={urllib.parse.quote(sub_rel)}">{icon} {name_esc}</a>'
+                try:
+                    inside = len([n for n in os.listdir(full) if not n.startswith(".")])
+                except OSError:
+                    inside = 0
+                title = f'<a class="item-name" href="/upload?folder={sub_q}">{name_esc}</a>'
+                meta = [f"文件夹 · {inside} 项", f"修改于 {mtime}"]
             else:
-                name_cell = f'{icon} {name_esc}'
-            pass_form = ""
+                title = f'<span class="item-name">{name_esc}</span>'
+                meta = [human_size(os.path.getsize(full)), f"修改于 {mtime}"]
+            meta_html = "".join(f"<span>{m}</span>" for m in meta)
+
+            fields = f"""
+        <form method="post" action="/rename" class="field">
+          <input type="hidden" name="folder" value="{folder_attr}">
+          <input type="hidden" name="old_name" value="{name_esc}">
+          <label for="rename-{index}">改名</label>
+          <div class="group">
+            <input type="text" class="text-input" id="rename-{index}" name="new_name" value="{name_esc}" required>
+            <button type="submit" class="btn btn-soft">保存</button>
+          </div>
+        </form>"""
             if is_dir and not folder_rel:
+                password = folder_password(name)
+                if password:
+                    meta_html += '<span class="badge">🔒 独立密码</span>'
                 expires = folder_expiry(name)
                 if expires:
                     left = max(0, expires - time.time()) / 86400
-                    name_cell += (
-                        '<span class="meta">⏳ 到期：'
-                        + datetime.fromtimestamp(expires).strftime("%Y-%m-%d %H:%M")
-                        + f"（还剩 {left:.1f} 天），到期后自动删除</span>"
-                    )
-                pass_form = f"""
-        <form method="post" action="/setexpiry">
+                    when = datetime.fromtimestamp(expires).strftime("%Y-%m-%d %H:%M")
+                    meta_html += f'<span class="badge warn">⏳ {when} 自动删除（还剩 {left:.1f} 天）</span>'
+                fields += f"""
+        <form method="post" action="/setpass" class="field">
           <input type="hidden" name="name" value="{name_esc}">
-          <input type="number" name="days" min="0" max="3650" step="any" placeholder="天数" class="rename-input days-input" title="几天后自动删除；留空或 0＝不过期">
-          <button type="submit" class="btn-mini">⏳ 设到期</button>
-        </form>""" + f"""
-        <form method="post" action="/setpass">
+          <label for="pass-{index}">访问密码</label>
+          <div class="group">
+            <input type="text" class="text-input" id="pass-{index}" name="password" value="{html.escape(password, quote=True)}" placeholder="未单独设置" autocomplete="off">
+            <button type="submit" class="btn btn-soft">保存</button>
+          </div>
+          <p class="hint">只对这个文件夹有效。留空＝使用通用密码。</p>
+        </form>
+        <form method="post" action="/setexpiry" class="field">
           <input type="hidden" name="name" value="{name_esc}">
-          <input type="text" name="password" value="{html.escape(folder_password(name), quote=True)}" placeholder="文件夹密码（留空＝用通用密码）" class="rename-input" autocomplete="off">
-          <button type="submit" class="btn-mini">🔒 设密码</button>
+          <label for="days-{index}">几天后自动删除</label>
+          <div class="group">
+            <input type="number" class="text-input" id="days-{index}" name="days" min="0" max="3650" step="any" placeholder="不过期">
+            <button type="submit" class="btn btn-soft">保存</button>
+          </div>
+          <p class="hint">从现在算起。到期后整个文件夹会被删除，无法恢复。留空或 0＝不过期。</p>
         </form>"""
-            rows.append(f"""    <tr class="manage-row">
-      <td class="name">{name_cell}</td>
-      <td class="actions">
-        <button type="button" class="btn-mini" onclick="copyLink('{link_url}', this)">🔗 复制链接</button>{pass_form}
-        <form method="post" action="/rename">
-          <input type="hidden" name="folder" value="{folder_attr}">
-          <input type="hidden" name="old_name" value="{name_esc}">
-          <input type="text" name="new_name" value="{name_esc}" class="rename-input">
-          <button type="submit" class="btn-mini">改名</button>
-        </form>
-        <form method="post" action="/delete" onsubmit="return confirm('确定删除「{name_esc}」吗？此操作无法撤销。');">
-          <input type="hidden" name="folder" value="{folder_attr}">
-          <input type="hidden" name="name" value="{name_esc}">
-          <button type="submit" class="btn-mini btn-danger">删除</button>
-        </form>
-      </td>
-    </tr>""")
-        return "\n".join(rows)
+
+            rows.append(f"""    <div class="item">
+      <div class="item-head">
+        <div class="item-icon">{icon}</div>
+        <div class="item-title">
+          {title}
+          <div class="item-meta">{meta_html}</div>
+        </div>
+        <div class="item-actions">
+          <button type="button" class="btn btn-soft" onclick="copyLink('{link_url}', this)">🔗 复制链接</button>
+          <button type="button" class="btn btn-ghost" aria-expanded="false" aria-controls="fields-{index}" onclick="toggleFields(this)">⚙ 设置</button>
+          <form method="post" action="/delete" onsubmit="return confirm('确定删除「{name_esc}」吗？此操作无法撤销。');">
+            <input type="hidden" name="folder" value="{folder_attr}">
+            <input type="hidden" name="name" value="{name_esc}">
+            <button type="submit" class="btn btn-danger">删除</button>
+          </form>
+        </div>
+      </div>
+      <div class="item-fields" id="fields-{index}" hidden>{fields}
+      </div>
+    </div>""")
+        return "\n".join(rows), f"共 {len(names)} 项"
 
     def handle_upload(self):
         length = int(self.headers.get("Content-Length", 0))
