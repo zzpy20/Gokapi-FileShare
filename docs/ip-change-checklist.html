@@ -343,10 +343,11 @@
       </div>
       <p>Anyone holding a link with the old IP in it now has a dead link — that's just old text, no server-side fix reaches it. The base addresses are:</p>
       <div class="link-list">
-        <div class="link-row"><span class="who">Browsable folder</span><span class="url">http://<span class="ph">NEW_IP</span>:8080/</span></div>
+        <div class="link-row"><span class="who">Shared folder</span><span class="url">http://<span class="ph">NEW_IP</span>:8080/&lt;folder&gt;/</span></div>
         <div class="link-row"><span class="who">Expiring links</span><span class="url">http://<span class="ph">NEW_IP</span>:9001/admin</span></div>
       </div>
       <p class="note">Individual Gokapi file links need regenerating from its admin page — the id/filename stays the same, only the host part changed.</p>
+      <p class="note">For fileshare, send each folder's own link again — the bare <code>:8080/</code> address shows visitors nothing. Passwords are unchanged, but everyone is asked for theirs once more, because a browser's saved sign-in belongs to the old address.</p>
     </div>
 
     <div class="step">
@@ -358,7 +359,7 @@
       <pre>SZ_FILESHARE_URL=http://NEW_IP:8080/
 SZ_FILESHARE_UPLOAD_URL=http://NEW_IP:8080/upload
 SZ_GOKAPI_URL=http://NEW_IP:9001/admin</pre>
-      <p class="note"><code>gokapi/clear-all.sh sz</code> reads <code>SZ_GOKAPI_URL</code> — leave the old IP there and it will talk to the dead box. The passwords and API key in that file don't change.</p>
+      <p class="note"><code>gokapi/clear-all.sh sz</code> reads <code>SZ_GOKAPI_URL</code> — leave the old IP there and it will talk to the dead box. The passwords and API key in that file don't change. Folder passwords and expiry dates are stored inside the folders on the server, so they are untouched by an IP change.</p>
     </div>
 
   </div>

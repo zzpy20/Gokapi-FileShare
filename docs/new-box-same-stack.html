@@ -421,6 +421,7 @@ sudo systemctl enable --now docker</pre>
 cp .env.example .env
 nano .env</pre>
           <p>Change <code>UPLOAD_USER</code> and <code>UPLOAD_PASS</code> to real values, then save (in <code>nano</code>: <code>Ctrl+O</code>, Enter, <code>Ctrl+X</code>). Record the same two values in the gitignored <code>.env</code> at the root of the repo on your Mac — that file is the master copy of every password.</p>
+          <p>Optional: add a line <code>VIEW_PASS=…</code> to make every visitor enter a shared password before anything opens (leave it out or empty for none), and record it on your Mac too. Passwords for individual folders are set later, on the management page.</p>
         </div>
         <div class="step">
           <div class="step-head">
@@ -515,7 +516,7 @@ Encryption Level:    Level 1 - Local encryption / Key locally</pre>
         <span class="path-tag">Same files, same links</span>
         <pre>rsync -a ~/gokapi/data/ newbox:~/Gokapi-FileShare/gokapi/data/
 rsync -a ~/gokapi/config/ newbox:~/Gokapi-FileShare/gokapi/config/</pre>
-        <p>Run from the <strong>old</strong> box, where gokapi's data actually lives at <code>~/gokapi/</code>. <code>newbox</code> is however you reach the new box over SSH. Carries over admin credentials and every file too. Do this and you still need one more edit —</p>
+        <p>Run from the <strong>old</strong> box, where gokapi's data actually lives at <code>~/gokapi/</code>. <code>newbox</code> is however you reach the new box over SSH. Carries over admin credentials and every file too. For fileshare, copy its <code>shared/</code> folder the same way (<code>rsync -a ~/fileshare/shared/ newbox:~/Gokapi-FileShare/fileshare/shared/</code>) — that brings each folder's own password and expiry date with it, since they are stored inside the folder. Do this and you still need one more edit —</p>
       </div>
     </div>
     <div class="callout">
