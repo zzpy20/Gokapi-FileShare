@@ -34,8 +34,8 @@ PAGE_STYLE = """
   * { box-sizing:border-box; }
   body { margin:0; background:var(--paper); color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif; }
-  .wrap { max-width:720px; margin:0 auto; padding:40px 20px 80px; }
-  .topbar { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:22px; }
+  .wrap { max-width:1120px; margin:0 auto; padding:40px 20px 80px; }
+  .topbar { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px 12px; margin-bottom:22px; }
   h1 { font-size:1.35rem; margin:0; word-break:break-all; }
   .upload-link { font-size:.85rem; color:var(--muted); text-decoration:none; white-space:nowrap; }
   .upload-link:hover { color:var(--accent); }
@@ -45,12 +45,21 @@ PAGE_STYLE = """
   tr:last-child td { border-bottom:none; }
   tr.parent td { color:var(--muted); }
   td.size, td.mtime { color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  td.name { overflow-wrap:anywhere; }
   td.name a { color:var(--ink); text-decoration:none; }
   td.name a:hover { color:var(--accent); text-decoration:underline; }
   .icon { margin-right:8px; }
   .empty { text-align:center; color:var(--muted); padding:32px 16px; }
   footer { text-align:center; color:var(--muted); font-size:.8rem; margin-top:20px; }
-  @media (max-width:480px) { td.mtime { display:none; } }
+  @media (max-width:640px) {
+    .wrap { padding:22px 12px 60px; }
+    h1 { font-size:1.15rem; }
+    th, td { padding:11px 10px; }
+    td { font-size:.9rem; }
+    .mtime { display:none; }
+    td.dl .lbl { display:none; }
+    td.dl .btn-mini { padding:6px 9px; }
+  }
   .panel { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:20px 22px; margin-bottom:20px; }
   .panel h2 { font-size:1rem; margin:0 0 14px; }
   .panel label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:6px; }
@@ -72,7 +81,7 @@ PAGE_STYLE = """
   .actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .actions form { display:flex; gap:6px; align-items:center; margin:0; }
   .rename-input {
-    width:120px; padding:6px 8px; border:1px solid var(--line); border-radius:4px;
+    width:200px; padding:6px 8px; border:1px solid var(--line); border-radius:4px;
     background:var(--paper); color:var(--ink); font-size:.85rem; margin:0;
   }
   .btn-mini {
@@ -81,6 +90,18 @@ PAGE_STYLE = """
   }
   .btn-mini:hover { opacity:.85; }
   .btn-mini.btn-danger { background:#f7e9e5; color:#a8452e; }
+  @media (max-width:640px) {
+    .panel { padding:16px 14px; }
+    .panel thead { display:none; }
+    .manage-row td { display:block; padding:6px 10px; border-bottom:none; }
+    .manage-row td.name { padding-top:14px; font-weight:600; }
+    .manage-row td.actions { display:flex; padding-bottom:14px; border-bottom:1px solid var(--line); }
+    .manage-row:last-child td.actions { border-bottom:none; }
+    .actions form[action="/rename"] { flex:1 1 100%; }
+    .rename-input { width:auto; flex:1; min-width:0; }
+  }
+  a.btn-mini { display:inline-block; text-decoration:none; }
+  td.dl { text-align:right; white-space:nowrap; }
 """
 
 LIST_TEMPLATE = """<!DOCTYPE html>
@@ -98,15 +119,43 @@ LIST_TEMPLATE = """<!DOCTYPE html>
     <a class="upload-link" href="/upload?folder={folder_q}">🛠 管理文件（上传 / 改名 / 删除）</a>
   </div>
   <table>
-    <thead><tr><th>文件名</th><th>大小</th><th>修改时间</th></tr></thead>
+    <thead><tr><th>文件名</th><th>大小</th><th class="mtime">修改时间</th><th></th></tr></thead>
     <tbody>
 {rows}
     </tbody>
   </table>
   <footer>共 {count} 项</footer>
 </div>
+{script}
 </body>
 </html>"""
+
+COPY_SCRIPT = """<script>
+function copyLink(url, btn) {
+  var original = btn.innerHTML;
+  function done(ok) {
+    btn.textContent = ok ? '✅ 已复制' : '复制失败';
+    setTimeout(function () { btn.innerHTML = original; }, 1500);
+  }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    done(ok);
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(function () { done(true); }).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+</script>"""
 
 UPLOAD_TEMPLATE = """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -151,32 +200,7 @@ UPLOAD_TEMPLATE = """<!DOCTYPE html>
     </form>
   </div>
 </div>
-<script>
-function copyLink(url, btn) {{
-  var original = btn.textContent;
-  function done(ok) {{
-    btn.textContent = ok ? '✅ 已复制' : '复制失败';
-    setTimeout(function () {{ btn.textContent = original; }}, 1500);
-  }}
-  function fallback() {{
-    var ta = document.createElement('textarea');
-    ta.value = url;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    var ok = false;
-    try {{ ok = document.execCommand('copy'); }} catch (e) {{ ok = false; }}
-    document.body.removeChild(ta);
-    done(ok);
-  }}
-  if (navigator.clipboard && window.isSecureContext) {{
-    navigator.clipboard.writeText(url).then(function () {{ done(true); }}).catch(fallback);
-  }} else {{
-    fallback();
-  }}
-}}
-</script>
+{script}
 </body>
 </html>"""
 
@@ -261,8 +285,9 @@ class ShareHandler(SimpleHTTPRequestHandler):
         rows = []
         rel = os.path.relpath(path, self.directory)
         rel = "" if rel == "." else rel
+        host = self.headers.get("Host", f"localhost:{PORT}")
         if rel:
-            rows.append('    <tr class="parent"><td colspan="3">⬆ <a href="../">上一级目录</a></td></tr>')
+            rows.append('    <tr class="parent"><td colspan="4">⬆ <a href="../">上一级目录</a></td></tr>')
 
         for name in names:
             if name.startswith("."):
@@ -275,10 +300,23 @@ class ShareHandler(SimpleHTTPRequestHandler):
             icon = "📁" if is_dir else ICONS.get(ext, "📄")
             size_str = "—" if is_dir else human_size(os.path.getsize(full))
             mtime = datetime.fromtimestamp(os.path.getmtime(full)).strftime("%Y-%m-%d %H:%M")
+            # Clicking the name opens the item in the browser. The buttons copy its
+            # direct link (to paste to someone else) and, for files, force a save.
+            direct = f"http://{host}/" + urllib.parse.quote((rel + "/" if rel else "") + name) + ("/" if is_dir else "")
+            dl_cell = (
+                f'<button type="button" class="btn-mini" title="复制直达链接" '
+                f'onclick="copyLink(\'{direct}\', this)">🔗<span class="lbl"> 复制链接</span></button>'
+            )
+            if not is_dir:
+                dl_cell += (
+                    f' <a class="btn-mini" title="下载" href="{link}?dl=1" download>'
+                    f'⬇<span class="lbl"> 下载</span></a>'
+                )
             rows.append(
                 f'    <tr><td class="name"><span class="icon">{icon}</span>'
                 f'<a href="{link}">{html.escape(display)}</a></td>'
-                f'<td class="size">{size_str}</td><td class="mtime">{mtime}</td></tr>'
+                f'<td class="size">{size_str}</td><td class="mtime">{mtime}</td>'
+                f'<td class="dl">{dl_cell}</td></tr>'
             )
 
         count = len(rows) - (1 if rel else 0)
@@ -286,8 +324,9 @@ class ShareHandler(SimpleHTTPRequestHandler):
         body = LIST_TEMPLATE.format(
             title=html.escape(title),
             style=PAGE_STYLE,
+            script=COPY_SCRIPT,
             folder_q=urllib.parse.quote(rel),
-            rows="\n".join(rows) if rows else '    <tr><td colspan="3" class="empty">暂无文件</td></tr>',
+            rows="\n".join(rows) if rows else '    <tr><td colspan="4" class="empty">暂无文件</td></tr>',
             count=count,
         )
         return self._respond_html(body)
@@ -324,7 +363,21 @@ class ShareHandler(SimpleHTTPRequestHandler):
                 return
             self.serve_upload_page(parsed)
             return
+        # ?dl=1 on a file: send it as an attachment so the browser saves it
+        # instead of opening it (the listing's download button uses this).
+        self._attachment = None
+        if urllib.parse.parse_qs(parsed.query).get("dl") == ["1"]:
+            target = self.translate_path(self.path)
+            if os.path.isfile(target):
+                self._attachment = os.path.basename(target)
         super().do_GET()
+
+    def end_headers(self):
+        name = getattr(self, "_attachment", None)
+        if name:
+            self.send_header("Content-Disposition", "attachment; filename*=UTF-8''" + urllib.parse.quote(name))
+            self._attachment = None
+        super().end_headers()
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -353,6 +406,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             folder_abs = SHARE_DIR
         body = UPLOAD_TEMPLATE.format(
             style=PAGE_STYLE,
+            script=COPY_SCRIPT,
             folder_display=html.escape(folder) if folder else "",
             folder_href=urllib.parse.quote(folder) + ("/" if folder else ""),
             folder_attr=html.escape(folder),
