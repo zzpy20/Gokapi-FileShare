@@ -32,6 +32,14 @@ FOLDER_PASS_FILE = ".fileshare-password"
 # Once it has passed, the folder and everything in it is deleted automatically.
 FOLDER_EXPIRY_FILE = ".fileshare-expires"
 SWEEP_SECONDS = 60
+# The QR code library (vendored next to this file) is served from this path and
+# only fetched by a page when someone first asks for a code.
+QR_LIB_PATH = "/.fileshare/qrcode.js"
+try:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qrcode.min.js"), "rb") as _f:
+        QR_LIB = _f.read()
+except OSError:
+    QR_LIB = b""
 THUMB_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 THUMB_MAX_BYTES = 3 * 1024 * 1024  # larger images get the plain icon instead
 MESSAGES = {
@@ -156,6 +164,18 @@ PAGE_STYLE = """
   .icon { margin-right:8px; }
   .thumb { width:76px; height:76px; object-fit:cover; border-radius:6px; vertical-align:middle; margin-right:14px; background:var(--accent-soft); }
   a.lb { cursor:zoom-in; }
+  /* QR code popup: the card stays white in both themes so the code scans reliably. */
+  .qr-overlay { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(8,12,14,.7); }
+  .qr-card { width:100%; max-width:340px; background:#ffffff; color:#1b2430; border-radius:12px; padding:20px; text-align:center; }
+  .qr-title { font-weight:600; font-size:.95rem; overflow-wrap:anywhere; margin:0 0 4px; }
+  .qr-sub { font-size:.78rem; color:#6b7680; margin:0 0 14px; }
+  .qr-img { display:block; width:100%; max-width:260px; height:auto; margin:0 auto; image-rendering:pixelated; }
+  .qr-url { font-size:.72rem; color:#6b7680; overflow-wrap:anywhere; margin:12px 0 16px; user-select:all; }
+  .qr-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .qr-actions .qr-act { background:#e3f0ef; color:#1c7c82; border:none; border-radius:6px; padding:8px 14px; font-size:.86rem; font-family:inherit; cursor:pointer; text-decoration:none; }
+  .qr-actions .qr-act:hover { opacity:.85; }
+  .qr-actions .qr-act:focus-visible { outline:2px solid #1c7c82; outline-offset:2px; }
+  .qr-err { font-size:.85rem; color:#a8452e; margin:10px 0; }
   /* Image viewer: deliberately dark in both themes, like a photo viewer. */
   .lb-overlay { position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; background:rgba(8,12,14,.94); color:#e8eeec; }
   .lb-top { display:flex; align-items:center; gap:10px; padding:12px 14px; font-size:.9rem; }
@@ -444,6 +464,105 @@ LIGHTBOX_SCRIPT = """<script>
   });
 })();
 </script>"""
+
+# QR codes are drawn in the visitor's own browser from the link text itself: no
+# redirect, and the link is never sent to any outside service.
+QR_SCRIPT = """<script>
+(function () {
+  var buttons = [].slice.call(document.querySelectorAll('.qr-btn'));
+  if (!buttons.length) return;
+  var LIB = '__QR_LIB_PATH__', loading = null, overlay = null, lastFocus = null;
+
+  function loadLib() {
+    if (window.qrcode) return Promise.resolve();
+    if (!loading) {
+      loading = new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = LIB;
+        s.onload = function () { window.qrcode ? resolve() : reject(); };
+        s.onerror = function () { loading = null; reject(); };
+        document.head.appendChild(s);
+      });
+    }
+    return loading;
+  }
+  function draw(url) {
+    var qr = window.qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    var n = qr.getModuleCount(), quiet = 4, scale = 8;
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = (n + quiet * 2) * scale;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#000000';
+    for (var r = 0; r < n; r++)
+      for (var c = 0; c < n; c++)
+        if (qr.isDark(r, c)) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+    return canvas.toDataURL('image/png');
+  }
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text) node.textContent = text;
+    return node;
+  }
+  function close() {
+    if (!overlay) return;
+    overlay.remove();
+    overlay = null;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function open(url, name) {
+    close();
+    lastFocus = document.activeElement;
+    overlay = el('div', 'qr-overlay');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '二维码');
+    var card = el('div', 'qr-card');
+    card.appendChild(el('p', 'qr-title', name));
+    card.appendChild(el('p', 'qr-sub', '用手机相机扫码打开'));
+    var body = el('div');
+    body.appendChild(el('p', 'qr-sub', '正在生成…'));
+    card.appendChild(body);
+    card.appendChild(el('p', 'qr-url', url));
+    var actions = el('div', 'qr-actions');
+    var closeBtn = el('button', 'qr-act', '关闭');
+    closeBtn.type = 'button';
+    closeBtn.addEventListener('click', close);
+    actions.appendChild(closeBtn);
+    card.appendChild(actions);
+    overlay.appendChild(card);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    document.body.appendChild(overlay);
+    closeBtn.focus();
+    var mine = overlay;
+    loadLib().then(function () {
+      if (overlay !== mine) return;
+      var src = draw(url);
+      var img = el('img', 'qr-img');
+      img.alt = '二维码：' + name;
+      img.src = src;
+      body.textContent = '';
+      body.appendChild(img);
+      var save = el('a', 'qr-act', '保存图片');
+      save.href = src;
+      save.setAttribute('download', (name.replace(/[\\/:*?"<>|]+/g, '_') || 'qr') + '-二维码.png');
+      actions.insertBefore(save, closeBtn);
+    }).catch(function () {
+      if (overlay !== mine) return;
+      body.textContent = '';
+      body.appendChild(el('p', 'qr-err', '二维码生成失败，请直接复制下面的链接。'));
+    });
+  }
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () { open(btn.getAttribute('data-qr'), btn.getAttribute('data-name') || ''); });
+  });
+  document.addEventListener('keydown', function (e) { if (overlay && e.key === 'Escape') close(); });
+})();
+</script>""".replace("__QR_LIB_PATH__", QR_LIB_PATH)
 
 COPY_SCRIPT = """<script>
 function copyLink(url, btn) {
@@ -759,6 +878,8 @@ class ShareHandler(SimpleHTTPRequestHandler):
             dl_cell = (
                 f'<button type="button" class="btn-mini" title="复制直达链接" '
                 f'onclick="copyLink(\'{direct}\', this)">🔗<span class="lbl"> 复制链接</span></button>'
+                f' <button type="button" class="btn-mini qr-btn" title="二维码" data-qr="{direct}" '
+                f'data-name="{html.escape(display, quote=True)}">▦<span class="lbl"> 二维码</span></button>'
             )
             if not is_dir:
                 dl_cell += (
@@ -803,7 +924,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             script=COPY_SCRIPT,
             manage_link=manage_link,
             expiry_note=expiry_note,
-            lightbox=LIGHTBOX_SCRIPT,
+            lightbox=LIGHTBOX_SCRIPT + "\n" + QR_SCRIPT,
             rows="\n".join(rows) if rows else '    <tr><td colspan="4" class="empty">暂无文件</td></tr>',
             count=count,
         )
@@ -965,6 +1086,14 @@ class ShareHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == QR_LIB_PATH and QR_LIB:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/javascript; charset=utf-8")
+            self.send_header("Content-Length", str(len(QR_LIB)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            self.wfile.write(QR_LIB)
+            return
         # /admin is an easier-to-remember way in to the management page.
         if parsed.path.rstrip("/") == "/admin" and not os.path.exists(os.path.join(SHARE_DIR, "admin")):
             self._redirect("/upload")
@@ -1052,7 +1181,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
         body = UPLOAD_TEMPLATE.format(
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
-            upload_script=LIGHTBOX_SCRIPT + "\n" + MANAGE_SCRIPT + "\n" + UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
+            upload_script=LIGHTBOX_SCRIPT + "\n" + QR_SCRIPT + "\n" + MANAGE_SCRIPT + "\n" + UPLOAD_SCRIPT.replace("__MAX_BYTES__", str(MAX_UPLOAD_BYTES)),
             crumbs=self._crumbs(folder),
             folder_href=urllib.parse.quote(folder) + ("/" if folder else ""),
             folder_attr=html.escape(folder),
@@ -1178,6 +1307,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
         </div>
         <div class="item-actions">
           <button type="button" class="btn btn-soft" onclick="copyLink('{link_url}', this)">🔗 复制链接</button>
+          <button type="button" class="btn btn-soft qr-btn" data-qr="{link_url}" data-name="{name_esc}">▦ 二维码</button>
           <button type="button" class="btn btn-ghost" aria-expanded="false" aria-controls="fields-{index}" onclick="toggleFields(this)">⚙ 设置</button>
           <form method="post" action="/delete" onsubmit="return confirm('确定删除「{name_esc}」吗？此操作无法撤销。');">
             <input type="hidden" name="folder" value="{folder_attr}">
