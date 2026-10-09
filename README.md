@@ -18,6 +18,25 @@ Deliberately reachable by bare IP, not a domain — mainland China requires ICP 
 
 **Gokapi's bare address redirects away on purpose.** Opening `http://<host>:9001/` sends you to Gokapi's GitHub page — it has no public home page, and its `RedirectUrl` setting (in `gokapi/config/config.json` on the box) is still the default. That is not a fault. The admin login is at `http://<host>:9001/admin`; shared files use their own download links.
 
+## Which one to use
+
+Use `fileshare` to share a collection with people you trust, and Gokapi to send one specific file to one person.
+
+| | `fileshare` | `gokapi` |
+|---|---|---|
+| Best for | A folder of things to browse: screenshots, trip documents, anything a friend picks from | One file for one person |
+| The link | One link per folder, which stays valid as you add files | One unguessable link per file |
+| Viewing | Images and PDFs open in the browser, with thumbnails | A download page per file |
+| Access control | Shared or per-folder password; anyone with a folder's link and password sees everything in it | Optional password per file |
+| Expiry | Optional, per top-level folder, by days | Per file, by days or by number of downloads |
+| On the server | Stored as plain files | Encrypted at rest |
+| Tracking | None | Download count per file |
+| Size limit | 500MB per upload | Far larger (set to 100GB) |
+
+**Rule of thumb:** if you would be uncomfortable with a stranger seeing it, use Gokapi; if it is just convenient to have in one place, use `fileshare`. Passport scans, visa paperwork and contracts belong in Gokapi with an expiry.
+
+**Caveat for both:** neither uses HTTPS, so files and passwords travel unencrypted between the box and the visitor. Gokapi's encryption only protects files while stored. For anything truly confidential, zip it with a password first and send that password by a different channel.
+
 ## Running one
 
 Each app directory is self-contained:
