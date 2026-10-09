@@ -245,7 +245,7 @@
       <h2>fileshare</h2>
       <span class="port-tag">:8080</span>
     </div>
-    <p class="app-sub">Browsable folders. Visitors get no top-level listing — they can only open a folder or file whose exact link they were given, plus everything inside that folder. A password is asked for first: the folder's own if you set one on the management page, otherwise the shared one (saved as <code>SZ_FILESHARE_VIEW_PASS</code> in your local <code>.env</code>).</p>
+    <p class="app-sub">Browsable folders. Visitors get no top-level listing — they can only open a folder or file whose exact link they were given, plus everything inside that folder. A folder's own password, set on the management page, is asked for first. A folder without one is open to anyone who has its link.</p>
     <dl class="fact-grid">
       <dt>Host path</dt>
       <dd><code>~/fileshare/shared/</code> — real filenames, real subfolders, exactly as they sit on disk.</dd>

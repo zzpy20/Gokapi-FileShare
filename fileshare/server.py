@@ -40,7 +40,7 @@ MESSAGES = {
     "renamed": ("ok", "已改名。"),
     "created": ("ok", "文件夹已创建。"),
     "pass_set": ("ok", "文件夹密码已设置。"),
-    "pass_cleared": ("ok", "文件夹密码已清除，改用通用密码。"),
+    "pass_cleared": ("ok", "文件夹密码已清除，改用通用密码。" if VIEW_PASS else "文件夹密码已清除。现在知道链接的人无需密码即可打开这个文件夹。"),
     "expiry_set": ("ok", "已设置到期时间，到期后该文件夹会被自动删除。"),
     "expiry_cleared": ("ok", "已取消到期时间。"),
     "exists": ("err", "已有同名的文件或文件夹，未做改动。"),
@@ -996,6 +996,8 @@ class ShareHandler(SimpleHTTPRequestHandler):
                 password = folder_password(name)
                 if password:
                     meta_html += '<span class="badge">🔒 独立密码</span>'
+                elif not VIEW_PASS:
+                    meta_html += '<span class="badge warn">🔓 无密码，有链接即可打开</span>'
                 expires = folder_expiry(name)
                 if expires:
                     left = max(0, expires - time.time()) / 86400
@@ -1009,7 +1011,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
             <input type="text" class="text-input" id="pass-{index}" name="password" value="{html.escape(password, quote=True)}" placeholder="未单独设置" autocomplete="off">
             <button type="submit" class="btn btn-soft">保存</button>
           </div>
-          <p class="hint">只对这个文件夹有效。留空＝使用通用密码。</p>
+          <p class="hint">只对这个文件夹有效。{"留空＝使用通用密码。" if VIEW_PASS else "留空＝不设密码，知道链接的人都能打开。"}</p>
         </form>
         <form method="post" action="/setexpiry" class="field">
           <input type="hidden" name="name" value="{name_esc}">
