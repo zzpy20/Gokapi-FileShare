@@ -7,6 +7,21 @@ Two small, independent file-sharing services for handing files to friends in mai
 
 Deliberately reachable by bare IP, not a domain — mainland China requires ICP filing for anything served at a domain name, and a bare IP sidesteps that entirely.
 
+## Where to start
+
+The pages you log in to. These are the current addresses — **they change if a box's public IP changes**, so if one stops answering, check the IP first (see the IP Change Checklist under [Docs](#docs)).
+
+| Box | App | Start here |
+|---|---|---|
+| Shenzhen | `fileshare` management (upload, folders, passwords, expiry) | http://47.107.139.170:8080/admin |
+| Shenzhen | `gokapi` admin | http://47.107.139.170:9001/admin |
+| Singapore | `gokapi` admin | http://singapore.1000600.xyz:9001/admin |
+
+- Usernames and passwords are **not** in this repo. They are in the gitignored `.env` at the root of the local clone, next to these same addresses (`SZ_FILESHARE_UPLOAD_URL`, `SZ_GOKAPI_URL`, `SG_GOKAPI_URL`) — update both places when an IP changes.
+- `fileshare`'s `/admin` is a shortcut that forwards to its real management address, `/upload`.
+- The Shenzhen addresses use the bare IP on purpose (no ICP filing). The Singapore one uses a hostname, which is re-pointed automatically when that box's IP changes.
+- The bare addresses without `/admin` are not the way in: `:8080/` shows visitors nothing, and `:9001/` redirects to Gokapi's GitHub page.
+
 ## The two apps
 
 | App | Port | What it's for | Source |

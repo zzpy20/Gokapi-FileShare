@@ -826,6 +826,10 @@ class ShareHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        # /admin is an easier-to-remember way in to the management page.
+        if parsed.path.rstrip("/") == "/admin" and not os.path.exists(os.path.join(SHARE_DIR, "admin")):
+            self._redirect("/upload")
+            return
         if parsed.path == "/upload":
             if not self.check_auth():
                 return
