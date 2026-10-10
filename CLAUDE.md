@@ -49,7 +49,8 @@ One file, `fileshare/server.py`, standard library only, plus the vendored
 - Pages are `str.format` templates. JavaScript lives in separate plain-string constants
   (`LIGHTBOX_SCRIPT`, `QR_SCRIPT`, `COPY_SCRIPT`, `MANAGE_SCRIPT`, `UPLOAD_SCRIPT`) so its
   braces need no doubling.
-- Admin (`/admin` redirects to `/upload`) uses Basic auth from `UPLOAD_USER`/`UPLOAD_PASS`.
+- The management page is `/admin` (GET `/upload` forwards to it; the upload form still posts to
+  `/upload`). It uses Basic auth from `UPLOAD_USER`/`UPLOAD_PASS`. Listings carry no link to it.
 - Visitors: the top level is not listed. Each top-level folder can have its own viewing
   password (cookie, 30 days) and an expiry date after which a background sweep deletes it.
   `VIEW_PASS` is an optional site-wide password, currently unset.

@@ -18,7 +18,7 @@
 | 新加坡 | `gokapi` 管理后台 | http://singapore.1000600.xyz:9001/admin |
 
 - 用户名和密码**不在**本仓库里。它们在本地仓库根目录下被 gitignore 排除的 `.env` 里，和这几个地址放在一起（`SZ_FILESHARE_UPLOAD_URL`、`SZ_GOKAPI_URL`、`SG_GOKAPI_URL`）——IP 变了，两处都要更新。
-- `fileshare` 的 `/admin` 是个方便记忆的入口，会跳转到它真正的管理地址 `/upload`。
+- `fileshare` 的管理页面就在 `/admin`。旧地址 `/upload` 仍然会跳转过去。文件夹列表页上没有通往它的链接，所以这个地址要手动输入或存为书签。
 - 深圳的地址故意使用裸 IP（免 ICP 备案）。新加坡的地址用的是域名，该服务器 IP 变化时会自动重新指向。
 - 不带 `/admin` 的裸地址不是入口：`:8080/` 对访客什么都不显示，`:9001/` 会跳转到 Gokapi 的 GitHub 页面。
 

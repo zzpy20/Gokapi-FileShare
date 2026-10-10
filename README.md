@@ -18,7 +18,7 @@ The pages you log in to. These are the current addresses — **they change if a 
 | Singapore | `gokapi` admin | http://singapore.1000600.xyz:9001/admin |
 
 - Usernames and passwords are **not** in this repo. They are in the gitignored `.env` at the root of the local clone, next to these same addresses (`SZ_FILESHARE_UPLOAD_URL`, `SZ_GOKAPI_URL`, `SG_GOKAPI_URL`) — update both places when an IP changes.
-- `fileshare`'s `/admin` is a shortcut that forwards to its real management address, `/upload`.
+- `fileshare`'s management page lives at `/admin`. Its old address, `/upload`, still forwards there. Folder listings carry no link to it, so the address has to be typed or bookmarked.
 - The Shenzhen addresses use the bare IP on purpose (no ICP filing). The Singapore one uses a hostname, which is re-pointed automatically when that box's IP changes.
 - The bare addresses without `/admin` are not the way in: `:8080/` shows visitors nothing, and `:9001/` redirects to Gokapi's GitHub page.
 

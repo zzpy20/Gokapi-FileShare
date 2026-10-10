@@ -232,7 +232,7 @@
     <div class="panel">
       <div class="cmd-row">
         <span class="what">Management page — type or bookmark this address (password-protected — browser will prompt once and remember it):</span>
-        <pre>&lt;SERVER_IP&gt;:8080/upload</pre>
+        <pre>&lt;SERVER_IP&gt;:8080/admin</pre>
       </div>
       <div class="cmd-row">
         <span class="what">Username / password</span>
@@ -249,7 +249,7 @@ in the gitignored .env at the root of the Gokapi-FileShare repo</pre>
       <li><strong>⚙ 设置 → 访问密码</strong> (top-level folders only): gives that folder its own viewing password; the current one is shown in the box. Leave it empty to remove the password, which leaves the folder open to anyone with its link. A folder with its own password shows a 🔒 独立密码 badge; one without shows a red 🔓 badge.</li>
       <li><strong>⚙ 设置 → 几天后自动删除</strong> (top-level folders only): enter a number of days from now. When they are up the folder and everything in it is deleted automatically, with no undo; a red badge on the row shows the date and days left. Empty or 0 cancels it.</li>
       <li>After any change you stay on this page and a line at the top says what happened.</li>
-      <li>Visitors never see a link to this page. Once you have logged in here, your own browser shows a "🛠 管理文件" link on every folder listing until it forgets the login.</li>
+      <li>No folder listing links to this page, for visitors or for you, so <strong>查看访客页面 →</strong> shows what a visitor sees. To come back, use the browser's back button or this address. The old address ending in <code>/upload</code> still forwards here.</li>
     </ul>
   </section>
 

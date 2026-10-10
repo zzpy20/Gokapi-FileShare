@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Minimal file-sharing server: read-only listing/download (optionally behind a
-shared viewing password), plus an authenticated /upload page for adding files
+shared viewing password), plus an authenticated /admin page for adding files
 and creating folders."""
 import base64
 import hashlib
@@ -299,7 +299,6 @@ LIST_TEMPLATE = """<!DOCTYPE html>
 <div class="wrap">
   <div class="topbar">
     <h1>📁 文件分享</h1>
-    {manage_link}
   </div>
   <table>
     <thead><tr><th>文件名</th><th>大小</th><th class="mtime">修改时间</th><th></th></tr></thead>
@@ -905,24 +904,15 @@ class ShareHandler(SimpleHTTPRequestHandler):
             )
 
         count = len(rows) - (1 if has_parent else 0)
-        # Visitors never see the management link. It appears only for a browser that
-        # has already logged in at /upload (it then sends the login with each request).
         expiry_note = ""
         expires = folder_expiry(rel.replace(os.sep, "/").split("/")[0]) if rel else 0
         if expires:
             expiry_note = " · 此分享将于 " + datetime.fromtimestamp(expires).strftime("%Y-%m-%d %H:%M") + " 到期"
-        manage_link = ""
-        if authed:
-            manage_link = (
-                f'<a class="upload-link" href="/upload?folder={urllib.parse.quote(rel)}">'
-                "🛠 管理文件（上传 / 改名 / 删除）</a>"
-            )
         title = urllib.parse.unquote(self.path) or "/"
         body = LIST_TEMPLATE.format(
             title=html.escape(title),
             style=PAGE_STYLE,
             script=COPY_SCRIPT,
-            manage_link=manage_link,
             expiry_note=expiry_note,
             lightbox=LIGHTBOX_SCRIPT + "\n" + QR_SCRIPT,
             rows="\n".join(rows) if rows else '    <tr><td colspan="4" class="empty">暂无文件</td></tr>',
@@ -1094,11 +1084,12 @@ class ShareHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(QR_LIB)
             return
-        # /admin is an easier-to-remember way in to the management page.
-        if parsed.path.rstrip("/") == "/admin" and not os.path.exists(os.path.join(SHARE_DIR, "admin")):
-            self._redirect("/upload")
-            return
+        # The management page lives at /admin. /upload was its old address and
+        # still forwards there, so earlier bookmarks keep working.
         if parsed.path == "/upload":
+            self._redirect("/admin" + ("?" + parsed.query if parsed.query else ""))
+            return
+        if parsed.path.rstrip("/") == "/admin":
             if not self.check_auth():
                 return
             self.serve_upload_page(parsed)
@@ -1204,13 +1195,13 @@ class ShareHandler(SimpleHTTPRequestHandler):
         parts = [p for p in folder.split("/") if p]
         if not parts:
             return "<strong>根目录</strong>"
-        out = ['<a href="/upload">根目录</a>']
+        out = ['<a href="/admin">根目录</a>']
         for i, part in enumerate(parts):
             if i == len(parts) - 1:
                 out.append(f"<strong>{html.escape(part)}</strong>")
             else:
                 target = urllib.parse.quote("/".join(parts[: i + 1]))
-                out.append(f'<a href="/upload?folder={target}">{html.escape(part)}</a>')
+                out.append(f'<a href="/admin?folder={target}">{html.escape(part)}</a>')
         return " / ".join(out)
 
     def _manage_rows(self, folder_abs, folder_rel):
@@ -1247,7 +1238,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
                     inside = len([n for n in os.listdir(full) if not n.startswith(".")])
                 except OSError:
                     inside = 0
-                title = f'<a class="item-name" href="/upload?folder={sub_q}">{name_esc}</a>'
+                title = f'<a class="item-name" href="/admin?folder={sub_q}">{name_esc}</a>'
                 meta = [f"文件夹 · {inside} 项", f"修改于 {mtime}"]
             else:
                 if is_image:
@@ -1476,7 +1467,7 @@ class ShareHandler(SimpleHTTPRequestHandler):
 
     def _back_to_manage(self, folder, msg):
         """Return to the management page of a folder, showing what just happened."""
-        self._redirect(f"/upload?folder={urllib.parse.quote(folder.strip('/'))}&msg={msg}")
+        self._redirect(f"/admin?folder={urllib.parse.quote(folder.strip('/'))}&msg={msg}")
 
     def _redirect(self, location):
         self.send_response(303)
